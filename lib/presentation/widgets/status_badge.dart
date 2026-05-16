@@ -12,10 +12,14 @@ class StatusBadge extends StatelessWidget {
     String label;
 
     switch (status.toUpperCase()) {
+      case 'TODO':
+        color = Colors.blueGrey;
+        label = "À faire";
+        break;
       case 'ACTIVE':
       case 'IN_PROGRESS':
         color = AppColors.accent;
-        label = "Actif";
+        label = "En cours";
         break;
       case 'DRAFT':
       case 'PLANNING':
@@ -26,6 +30,10 @@ class StatusBadge extends StatelessWidget {
       case 'DONE':
         color = AppColors.primary;
         label = "Terminé";
+        break;
+      case 'REVIEW':
+        color = Colors.orange;
+        label = "En révision";
         break;
       case 'ARCHIVED':
         color = Colors.grey;

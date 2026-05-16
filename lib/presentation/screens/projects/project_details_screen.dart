@@ -708,7 +708,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           ),
           _buildColumn(
             "Révision",
-            tasks.where((t) => t.status == "IN_REVIEW").toList(),
+            tasks.where((t) => t.status == "REVIEW").toList(),
           ),
           _buildColumn(
             "Terminé",

@@ -7,7 +7,6 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/theme_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_toast.dart';
 import 'company_settings_screen.dart';
@@ -350,17 +349,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                 const SizedBox(height: 32),
                 _sectionTitle("PRÉFÉRENCES"),
-                _buildSettingItem(
-                  icon: LucideIcons.sunMoon,
-                  title: "Thème",
-                  subtitle: "Basculer entre le thème clair et sombre",
-                  trailing: Switch(
-                    value: ref.watch(themeModeProvider) == ThemeMode.light,
-                    activeThumbColor: AppColors.warning,
-                    onChanged: (_) => ref.read(themeModeProvider.notifier).toggle(),
-                  ),
-                ),
-                const SizedBox(height: 12),
+
                 _buildSettingItem(
                   icon: LucideIcons.building2,
                   title: "Entreprise",

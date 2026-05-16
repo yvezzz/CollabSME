@@ -21,28 +21,7 @@ class AppColors {
   );
 }
 
-/// Définition du thème global de l'application
-class AppTheme {
-  static ThemeData darkTheme = ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.background,
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.primary,
-      secondary: AppColors.accent,
-      surface: AppColors.surface,
-    ),
-    // Style par défaut des cartes pour éviter la répétition dans les widgets
-    cardTheme: CardThemeData(
-      color: AppColors.card,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
-      ),
-    ),
-  );
-}
+
 
 /// Constantes globales de l'application
 class AppConstants {

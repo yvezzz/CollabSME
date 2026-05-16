@@ -121,15 +121,7 @@ class TaskBoardScreen extends ConsumerWidget {
                         _buildColumn(
                           context,
                           ref,
-                          "Backlog",
-                          "BACKLOG",
-                          tasks.where((t) => t.status == 'BACKLOG').toList(),
-                          canCreate,
-                        ),
-                        _buildColumn(
-                          context,
-                          ref,
-                          "To Do",
+                          "À faire",
                           "TODO",
                           tasks.where((t) => t.status == 'TODO').toList(),
                           canCreate,
@@ -137,7 +129,7 @@ class TaskBoardScreen extends ConsumerWidget {
                         _buildColumn(
                           context,
                           ref,
-                          "In Progress",
+                          "En cours",
                           "IN_PROGRESS",
                           tasks
                               .where((t) => t.status == 'IN_PROGRESS')
@@ -147,15 +139,15 @@ class TaskBoardScreen extends ConsumerWidget {
                         _buildColumn(
                           context,
                           ref,
-                          "Review",
-                          "IN_REVIEW",
-                          tasks.where((t) => t.status == 'IN_REVIEW').toList(),
+                          "Révision",
+                          "REVIEW",
+                          tasks.where((t) => t.status == 'REVIEW').toList(),
                           canCreate,
                         ),
                         _buildColumn(
                           context,
                           ref,
-                          "Done",
+                          "Terminé",
                           "DONE",
                           tasks.where((t) => t.status == 'DONE').toList(),
                           canCreate,

@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'core/constants/app_constants.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/auth/login_screen.dart';
 import 'presentation/screens/auth/reset_password_screen.dart';
@@ -119,16 +118,12 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
   @override
   Widget build(BuildContext context) {
     final authAsync = ref.watch(authStateProvider);
-    final themeMode = ref.watch(themeModeProvider);
-    final themeNotifier = ref.read(themeModeProvider.notifier);
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'CollabSME',
       debugShowCheckedModeBanner: false,
-      themeMode: themeMode,
-      theme: themeNotifier.lightTheme,
-      darkTheme: themeNotifier.darkTheme,
+      theme: appTheme,
       home: authAsync.when(
         data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
@@ -137,14 +132,14 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(LucideIcons.wifiOff, size: 64, color: AppColors.danger),
+                const Icon(LucideIcons.wifiOff, size: 64, color: Color(0xFFEF4444)),
                 const SizedBox(height: 16),
                 const Text("Erreur de connexion au serveur", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
-                Text(e.toString(), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+                Text(e.toString(), textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFF94A3B8))),
                 const SizedBox(height: 24),
                 ElevatedButton(onPressed: () => ref.read(authStateProvider.notifier).checkSession(), child: const Text("Réessayer")),
-                TextButton(onPressed: () async { await ApiClient.removeToken(); ref.invalidate(authStateProvider); }, child: const Text("Retour à la connexion", style: TextStyle(color: AppColors.textSecondary))),
+                TextButton(onPressed: () async { await ApiClient.removeToken(); ref.invalidate(authStateProvider); }, child: const Text("Retour à la connexion", style: TextStyle(color: Color(0xFF94A3B8)))),
               ],
             ),
           ),
@@ -152,18 +147,7 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
       ),
       onGenerateRoute: (settings) {
         if (settings.name == null) return null;
-        final uri = Uri.parse(settings.name!);
-        final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
-        if (segs.isEmpty) return null;
-        if (segs[0] == 'reset-password') {
-          final email = segs.length >= 3 ? Uri.decodeComponent(segs[1]) : '';
-          final token = segs.length >= 2 ? segs.last : '';
-          return MaterialPageRoute(builder: (_) => ResetPasswordScreen(email: email, token: token));
-        }
-        if (segs[0] == 'accept-invitation' && segs.length >= 2) {
-          return MaterialPageRoute(builder: (_) => AcceptInvitationScreen(token: segs[1]));
-        }
-        return null;
+        return _buildDeepLinkRoute(Uri.parse(settings.name!));
       },
     );
   }
