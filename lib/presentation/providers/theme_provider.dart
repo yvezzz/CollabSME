@@ -3,19 +3,19 @@ import '../../core/constants/app_constants.dart';
 
 final appTheme = ThemeData(
   useMaterial3: true,
-  brightness: Brightness.light,
-  scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-  colorScheme: const ColorScheme.light(
+  brightness: Brightness.dark,
+  scaffoldBackgroundColor: AppColors.background,
+  colorScheme: const ColorScheme.dark(
     primary: AppColors.primary,
     secondary: AppColors.accent,
-    surface: Colors.white,
+    surface: AppColors.surface,
   ),
   cardTheme: CardThemeData(
-    color: Colors.white,
+    color: AppColors.card,
     elevation: 0,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
-      side: BorderSide(color: Colors.grey.withValues(alpha: 0.15)),
+      side: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
     ),
   ),
 );
