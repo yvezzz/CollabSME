@@ -105,38 +105,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               selectedItemColor: AppColors.primary,
               unselectedItemColor: AppColors.textSecondary,
               items: visibleIndices.map((i) {
-                switch (i) {
-                  case 0:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.home),
-                      label: "Accueil",
-                    );
-                   case 1:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.checkSquare),
-                      label: "Tâches",
-                    );
-                  case 2:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.users),
-                      label: "Équipe",
-                    );
-                  case 3:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.bell),
-                      label: "Notifications",
-                    );
-                  case 4:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.settings),
-                      label: "Paramètres",
-                    );
-                  default:
-                    return const BottomNavigationBarItem(
-                      icon: Icon(LucideIcons.barChart3),
-                      label: "Plus",
-                    );
-                }
+                const items = [
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.home), label: "Accueil"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.checkSquare), label: "Tâches"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.users), label: "Équipe"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.bell), label: "Notifications"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.settings), label: "Paramètres"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.barChart3), label: "Rapports"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.building2), label: "Entreprise"),
+                ];
+                return items[i];
               }).toList(),
             )
           : null,
