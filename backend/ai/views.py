@@ -144,12 +144,13 @@ def summarize_project(request):
     tasks = project.tasks.all()
     total = tasks.count()
     done = tasks.filter(status='DONE').count()
+    pct = done / total * 100 if total > 0 else 0
 
     messages = [
         {'role': 'system', 'content': SYSTEM_PROMPT},
         {'role': 'user', 'content': (
             f'Résume le projet "{project.title}" avec {total} tâches '
-            f'dont {done} terminées ({done/total*100:.0f}%). '
+            f'dont {done} terminées ({pct:.0f}%). '
             f'Donne un résumé concis en français.'
         )},
     ]

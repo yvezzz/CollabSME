@@ -1,0 +1,17 @@
+{
+  "django": {
+    "summary": {
+      "passed": 62,
+      "total": 62,
+      "collected": 62
+    },
+    "created": 1778947576.8094845,
+    "duration": 173.84253025054932
+  },
+  "flutter": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0
+  },
+  "summary": "Django: 62/62 passed | Flutter: 4/4 passed"
+}
