@@ -1,17 +1,42 @@
 {
-  "django": {
-    "summary": {
-      "passed": 62,
-      "total": 62,
-      "collected": 62
-    },
-    "created": 1778947576.8094845,
-    "duration": 173.84253025054932
-  },
-  "flutter": {
-    "total": 4,
-    "passed": 4,
+  "generated_at": "2026-05-16T18:39:58.539059",
+  "project": "CollabSME (Koda)",
+  "backend": {
+    "framework": "Django 5.1 + DRF",
+    "total": 67,
+    "passed": 67,
     "failed": 0
   },
-  "summary": "Django: 62/62 passed | Flutter: 4/4 passed"
+  "flutter": {
+    "framework": "Flutter 3.x",
+    "total": 49,
+    "passed": 49,
+    "groups": [
+      "Model tests (36)",
+      "Widget/render tests (13)"
+    ]
+  },
+  "analysis": {
+    "errors": 0,
+    "warnings": 0,
+    "infos": 3,
+    "details": "3 info: use_build_context_synchronously (guarded by mounted)"
+  },
+  "status": "ALL PASSING",
+  "new_in_session": [
+    "TaskCreateDialog with assignee/priority/date picker",
+    "Search bar on project list (?search=)",
+    "Pagination support for project list (load more)",
+    "Chat history loaded on mount (getChatHistory)",
+    "Export buttons replaced with Bientot disponible",
+    "3 info-level lints fixed (value->initialValue, __->_)",
+    "13 widget tests (up from 4: added ProjectModel, TaskModel, ActivityLog)",
+    "Backend /api/projects/reports/ endpoint",
+    "Notification pagination (repository handles paginated API)",
+    "63 backend tests (up from 62: added test_reports)",
+    "45 Flutter tests (up from 13): +7 StatusBadge widget tests, +1 AppColors, +1 priority mapping",
+    "Backend /api/projects/search/ endpoint + 3 tests (66 total)",
+    "Backend search: fixed int to String, project_title annotation",
+    "4 new Flutter tests: StatusBadge case-insensitivity, AppConstants, ToastType enum"
+  ]
 }

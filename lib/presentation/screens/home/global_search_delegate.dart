@@ -72,9 +72,9 @@ class GlobalSearchDelegate extends SearchDelegate {
                 leading: const Icon(LucideIcons.briefcase, color: AppColors.primary),
                 title: Text(p['title'] ?? ''),
                 subtitle: Text(p['key'] ?? ''),
-                onTap: () {
+                  onTap: () {
                   close(context, null);
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProjectDetailsScreen(projectId: p['id'])));
+                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProjectDetailsScreen(projectId: '${p['id']}')));
                 },
               )),
             ],
@@ -86,8 +86,13 @@ class GlobalSearchDelegate extends SearchDelegate {
               ...tasks.map((t) => ListTile(
                 leading: const Icon(LucideIcons.checkSquare, color: AppColors.accent),
                 title: Text(t['title'] ?? ''),
-                subtitle: Text("${t['project_title']} • ${t['status']}"),
-                onTap: () => close(context, null),
+                subtitle: Text("${t['project_title'] ?? ''} • ${t['status'] ?? ''}"),
+                onTap: () {
+                  close(context, null);
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => ProjectDetailsScreen(projectId: '${t['project_id']}'),
+                  ));
+                },
               )),
             ],
           ],

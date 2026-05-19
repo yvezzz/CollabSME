@@ -69,7 +69,24 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
                       ),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text("Erreur: $e")),
+              error: (e, s) => Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text("Erreur: $e", style: const TextStyle(color: AppColors.textSecondary)),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () => ref.invalidate(notificationListProvider),
+                      icon: const Icon(LucideIcons.refreshCcw, size: 16),
+                      label: const Text("Réessayer"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

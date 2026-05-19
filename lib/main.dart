@@ -118,12 +118,15 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
   @override
   Widget build(BuildContext context) {
     final authAsync = ref.watch(authStateProvider);
+    final themeMode = ref.watch(themeModeProvider);
 
     return MaterialApp(
       navigatorKey: _navigatorKey,
       title: 'CollabSME',
       debugShowCheckedModeBanner: false,
-      theme: appTheme,
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: themeMode,
       home: authAsync.when(
         data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),

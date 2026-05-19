@@ -511,7 +511,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               user.email,
                               passwordController.text,
                             );
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         if (!verified) {
                           AppToast.show(
                             context,
@@ -523,14 +523,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         await ref
                             .read(authRepositoryProvider)
                             .requestPasswordReset(user.email);
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         AppToast.show(
                           context,
                           message: "E-mail de réinitialisation envoyé",
                           type: ToastType.success,
                         );
                       } catch (e) {
-                        if (mounted) {
+                        if (context.mounted) {
                           AppToast.show(
                             context,
                             message: "Erreur : $e",

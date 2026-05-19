@@ -52,13 +52,23 @@ class TaskListNotifier extends StateNotifier<AsyncValue<List<TaskModel>>> {
     }
   }
 
-  Future<void> createTaskInColumn({required String title, String description = '', required String status}) async {
-    await _repository.createTask(_projectId, {
+  Future<void> createTaskInColumn({
+    required String title,
+    String description = '',
+    required String status,
+    String? assignedTo,
+    String priority = 'MEDIUM',
+    String? dueDate,
+  }) async {
+    final data = <String, dynamic>{
       'title': title,
       'description': description,
       'status': status,
-      'priority': 'MEDIUM',
-    });
+      'priority': priority,
+    };
+    if (assignedTo != null) data['assigned_to'] = assignedTo;
+    if (dueDate != null) data['due_date'] = dueDate;
+    await _repository.createTask(_projectId, data);
     await fetchTasks(showLoading: false);
   }
 }

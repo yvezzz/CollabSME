@@ -19,15 +19,21 @@ class ProjectRepository {
   }
 
   /// Récupérer la liste des projets de l'entreprise
-  Future<List<ProjectModel>> getProjects() async {
+  Future<Map<String, dynamic>> getProjects({int page = 1, String search = ''}) async {
     try {
-      final response = await ApiClient.get('projects/');
+      final params = <String, String>{'page': '$page'};
+      if (search.isNotEmpty) params['search'] = search;
+      final query = params.entries.map((e) => '${e.key}=${Uri.encodeComponent(e.value)}').join('&');
+      final response = await ApiClient.get('projects/?$query');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        // On gère la pagination DRF si présente (results key)
         final List results = data is Map ? (data['results'] ?? []) : data;
-        return results.map((json) => ProjectModel.fromJson(json)).toList();
+        final count = data is Map ? (data['count'] ?? results.length) : results.length;
+        return {
+          'projects': results.map((json) => ProjectModel.fromJson(json)).toList(),
+          'count': count,
+        };
       } else {
         throw Exception(
           "Erreur lors de la récupération des projets (${response.statusCode})",

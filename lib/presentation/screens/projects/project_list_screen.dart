@@ -13,10 +13,23 @@ import '../../../widgets/glass_container.dart';
 import '../../widgets/status_badge.dart';
 import '../../providers/auth_provider.dart';
 
-class ProjectListScreen extends ConsumerWidget {
+class ProjectListScreen extends ConsumerStatefulWidget {
   const ProjectListScreen({super.key});
 
-  void _showCreateProjectDialog(BuildContext context, WidgetRef ref) {
+  @override
+  ConsumerState<ProjectListScreen> createState() => _ProjectListScreenState();
+}
+
+class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
+  final _searchCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
+  }
+
+  void _showCreateProjectDialog(BuildContext context) {
     final nameController = TextEditingController();
     final descController = TextEditingController();
     final keyController = TextEditingController();
@@ -168,8 +181,9 @@ class ProjectListScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final projectState = ref.watch(projectListProvider);
+    final notifier = ref.read(projectListProvider.notifier);
     final user = ref.watch(authStateProvider).value;
     final canCreate =
         user != null && (user.isCompanyAdmin || user.role != 'MEMBER');
@@ -183,59 +197,110 @@ class ProjectListScreen extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
-          _buildNotificationIcon(context, ref),
+          _buildNotificationIcon(context),
           const SizedBox(width: 8),
         ],
       ),
       floatingActionButton: canCreate
           ? FloatingActionButton(
-              onPressed: () => _showCreateProjectDialog(context, ref),
+              onPressed: () => _showCreateProjectDialog(context),
               backgroundColor: AppColors.primary,
               child: const Icon(LucideIcons.plus),
             )
           : null,
-      body: projectState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text("Erreur: $err")),
-        data: (projects) {
-          if (projects.isEmpty) {
-            return _buildEmptyState(context, ref, canCreate);
-          }
-          return RefreshIndicator(
-            onRefresh: () =>
-                ref.read(projectListProvider.notifier).fetchProjects(),
-            child: GridView.builder(
-              padding: const EdgeInsets.all(16),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
-              ),
-              itemCount: projects.length,
-              itemBuilder: (context, index) {
-                final project = projects[index];
-                return GestureDetector(
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          ProjectDetailsScreen(projectId: project.id),
+      body: Column(
+        children: [
+          _buildSearchBar(notifier),
+          Expanded(
+            child: projectState.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text("Erreur: $err")),
+              data: (projects) {
+                if (projects.isEmpty) {
+                  return _buildEmptyState(context, canCreate);
+                }
+                return RefreshIndicator(
+                  onRefresh: () => notifier.fetchProjects(),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(16),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 1.1,
                     ),
+                    itemCount: projects.length + (notifier.hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == projects.length) {
+                        return _buildLoadMoreButton(notifier);
+                      }
+                      final project = projects[index];
+                      return GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                ProjectDetailsScreen(projectId: project.id),
+                          ),
+                        ),
+                        child: _buildProjectCard(
+                          project,
+                        ).animate().fadeIn(delay: (100 * index).ms).scale(),
+                      );
+                    },
                   ),
-                  child: _buildProjectCard(
-                    project,
-                  ).animate().fadeIn(delay: (100 * index).ms).scale(),
                 );
               },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildNotificationIcon(BuildContext context, WidgetRef ref) {
+  Widget _buildSearchBar(ProjectListNotifier notifier) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+      child: TextField(
+        controller: _searchCtrl,
+        onChanged: (v) => notifier.search(v),
+        decoration: InputDecoration(
+          hintText: "Rechercher un projet...",
+          prefixIcon: const Icon(LucideIcons.search, size: 20),
+          suffixIcon: _searchCtrl.text.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(LucideIcons.x, size: 18),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    notifier.search('');
+                  },
+                )
+              : null,
+          filled: true,
+          fillColor: AppColors.card,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreButton(ProjectListNotifier notifier) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: TextButton.icon(
+          onPressed: () => notifier.loadMore(),
+          icon: const Icon(LucideIcons.chevronDown, size: 18),
+          label: Text("Voir plus (${notifier.totalCount - 20} restants)"),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNotificationIcon(BuildContext context) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider).valueOrNull ?? 0;
 
     return Stack(
@@ -318,7 +383,7 @@ class ProjectListScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref, bool canCreate) {
+  Widget _buildEmptyState(BuildContext context, bool canCreate) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -336,7 +401,7 @@ class ProjectListScreen extends ConsumerWidget {
           if (canCreate) ...[
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => _showCreateProjectDialog(context, ref),
+              onPressed: () => _showCreateProjectDialog(context),
               child: const Text("Créer votre premier projet"),
             ),
           ],

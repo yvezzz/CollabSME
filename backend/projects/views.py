@@ -51,6 +51,28 @@ def require_project_role(project, user, allowed_roles):
     return True
 
 
+# ─── Global Search ────────────────────────────────────────────────
+
+@api_view(['GET'])
+def global_search(request):
+    q = request.query_params.get('q', '').strip()
+    if not q or len(q) < 2:
+        return Response({'projects': [], 'tasks': []})
+
+    company = request.user.company
+    projects = Project.objects.filter(company=company, title__icontains=q)
+    tasks = Task.objects.filter(project__company=company, title__icontains=q)
+
+    from django.db.models import F
+    task_data = tasks.annotate(
+        project_title=F('project__title')
+    ).values('id', 'title', 'status', 'project_id', 'project_title')
+    return Response({
+        'projects': list(projects.values('id', 'title', 'key')),
+        'tasks': list(task_data),
+    })
+
+
 # ─── Project CRUD ──────────────────────────────────────────────────
 
 @api_view(['GET', 'POST'])
@@ -166,6 +188,33 @@ def dashboard_stats(request):
         'total_projects': projects.count(),
         'active_tasks': tasks.filter(status__in=['TODO', 'IN_PROGRESS', 'REVIEW']).count(),
         'total_members': members.count(),
+    })
+
+
+@api_view(['GET'])
+def project_reports(request):
+    company = request.user.company
+    projects = Project.objects.filter(company=company)
+    tasks = Task.objects.filter(project__company=company)
+    total = tasks.count()
+    done = tasks.filter(status='DONE').count()
+
+    by_status = {}
+    for project in projects:
+        s = project.status
+        by_status[s] = by_status.get(s, 0) + 1
+
+    overdue = tasks.filter(
+        due_date__lt=timezone.now().date(),
+        status__in=['TODO', 'IN_PROGRESS', 'REVIEW']
+    ).count()
+
+    return Response({
+        'total_projects': projects.count(),
+        'total_tasks': total,
+        'completion_rate': round((done / total * 100) if total > 0 else 0, 1),
+        'overdue_tasks': overdue,
+        'projects_by_status': by_status,
     })
 
 

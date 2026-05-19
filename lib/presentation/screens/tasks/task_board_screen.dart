@@ -8,6 +8,7 @@ import '../../providers/auth_provider.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/models/task_model.dart';
 import '../../../widgets/glass_container.dart';
+import '../../../presentation/widgets/task_create_dialog.dart';
 import 'task_detail_screen.dart';
 import '../../../presentation/widgets/app_toast.dart';
 
@@ -17,56 +18,30 @@ Future<void> _promptNewTask(
   String projectId,
   String columnStatus,
 ) async {
-  final titleCtrl = TextEditingController();
-  try {
-    final submitted = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Nouvelle tâche'),
-        content: TextField(
-          controller: titleCtrl,
-          decoration: const InputDecoration(labelText: 'Titre'),
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => Navigator.pop(ctx, true),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Annuler'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Créer'),
-          ),
-        ],
-      ),
-    );
-    if (submitted == true &&
-        titleCtrl.text.trim().isNotEmpty &&
-        context.mounted) {
-      try {
-        await ref
-            .read(taskListProvider(projectId).notifier)
-            .createTaskInColumn(
-              title: titleCtrl.text.trim(),
-              status: columnStatus,
-            );
-        if (context.mounted) {
-          AppToast.show(
-            context,
-            message: 'Tâche créée',
-            type: ToastType.success,
+  final result = await showDialog<Map<String, dynamic>>(
+    context: context,
+    builder: (_) => TaskCreateDialog(columnStatus: columnStatus),
+  );
+  if (result != null && context.mounted) {
+    try {
+      await ref
+          .read(taskListProvider(projectId).notifier)
+          .createTaskInColumn(
+            title: result['title'],
+            description: result['description'] ?? '',
+            status: columnStatus,
+            assignedTo: result['assigned_to'],
+            priority: result['priority'] ?? 'MEDIUM',
+            dueDate: result['due_date'],
           );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          AppToast.show(context, message: 'Erreur : $e', type: ToastType.error);
-        }
+      if (context.mounted) {
+        AppToast.show(context, message: 'Tâche créée', type: ToastType.success);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        AppToast.show(context, message: 'Erreur : $e', type: ToastType.error);
       }
     }
-  } finally {
-    titleCtrl.dispose();
   }
 }
 
@@ -98,7 +73,24 @@ class TaskBoardScreen extends ConsumerWidget {
       ),
       body: taskState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (err, stack) => Center(child: Text("Erreur: $err")),
+        error: (err, stack) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Erreur: $err", style: const TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+              ElevatedButton.icon(
+                onPressed: () => ref.invalidate(taskListProvider(projectId)),
+                icon: const Icon(LucideIcons.refreshCcw, size: 16),
+                label: const Text("Réessayer"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
         data: (tasks) {
           return LayoutBuilder(
             builder: (context, constraints) {

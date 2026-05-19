@@ -13,6 +13,7 @@ import 'package:collabsme/data/repositories/ai_repository.dart';
 import 'package:collabsme/presentation/widgets/app_toast.dart';
 import 'package:collabsme/presentation/screens/activity/activity_log_screen.dart';
 import 'package:collabsme/presentation/screens/tasks/task_board_screen.dart';
+import 'package:collabsme/presentation/widgets/task_create_dialog.dart';
 import '../../providers/auth_provider.dart';
 import 'project_edit_dialog.dart';
 import 'project_members_screen.dart';
@@ -31,14 +32,43 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   // Contrôleur pour le chat de l'IA
   final _aiController = TextEditingController();
 
-  // Liste locale des messages (pour simuler la discussion)
-  final List<Map<String, dynamic>> _messages = [
-    {
-      "text":
-          "Bonjour ! Je suis votre assistant CollabSME. Comment puis-je vous aider aujourd'hui ?",
-      "isAI": true,
-    },
-  ];
+  // Liste des messages du chat
+  final List<Map<String, dynamic>> _messages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(_loadChatHistory);
+  }
+
+  Future<void> _loadChatHistory() async {
+    try {
+      final history = await ref.read(aiRepositoryProvider).getChatHistory();
+      if (mounted) {
+        setState(() {
+          _messages.addAll(history.map((msg) => {
+            "text": msg['message'] ?? msg['response'] ?? '',
+            "isAI": msg['role'] == 'assistant' || msg['is_ai'] == true,
+          }));
+          if (_messages.isEmpty) {
+            _messages.add({
+              "text": "Bonjour ! Je suis votre assistant CollabSME. Comment puis-je vous aider aujourd'hui ?",
+              "isAI": true,
+            });
+          }
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            "text": "Bonjour ! Je suis votre assistant CollabSME. Comment puis-je vous aider aujourd'hui ?",
+            "isAI": true,
+          });
+        });
+      }
+    }
+  }
 
   Future<void> _sendMessage() async {
     final text = _aiController.text.trim();
@@ -381,63 +411,24 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   }
 
   Future<void> _handleAddTask() async {
-    final titleCtrl = TextEditingController();
-    final descCtrl = TextEditingController();
-    final submitted = await showDialog<bool>(
+    final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: Colors.grey[900],
-        title: Text(
-          "Nouvelle tâche",
-          style: GoogleFonts.outfit(color: Colors.white),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(labelText: "Titre"),
-              autofocus: true,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: descCtrl,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                labelText: "Description (optionnelle)",
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text("Annuler"),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Créer"),
-          ),
-        ],
-      ),
+      builder: (_) => const TaskCreateDialog(columnStatus: 'TODO'),
     );
-    if (submitted == true && titleCtrl.text.trim().isNotEmpty && mounted) {
+    if (result != null && mounted) {
       try {
         await ref
             .read(taskListProvider(widget.projectId).notifier)
             .createTaskInColumn(
-              title: titleCtrl.text.trim(),
-              description: descCtrl.text.trim(),
-              status: "TODO",
+              title: result['title'],
+              description: result['description'] ?? '',
+              status: 'TODO',
+              assignedTo: result['assigned_to'],
+              priority: result['priority'] ?? 'MEDIUM',
+              dueDate: result['due_date'],
             );
         if (mounted) {
-          AppToast.show(
-            context,
-            message: "Tâche créée",
-            type: ToastType.success,
-          );
+          AppToast.show(context, message: "Tâche créée", type: ToastType.success);
         }
       } catch (e) {
         if (mounted) {
@@ -445,8 +436,6 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         }
       }
     }
-    titleCtrl.dispose();
-    descCtrl.dispose();
   }
 
   void _navigateToMembers() {

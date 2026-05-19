@@ -15,19 +15,58 @@ final projectListProvider =
 class ProjectListNotifier
     extends StateNotifier<AsyncValue<List<ProjectModel>>> {
   final ProjectRepository _repository;
+  String _search = '';
+  int _page = 1;
+  int _totalCount = 0;
+  bool _isLoadingMore = false;
 
   ProjectListNotifier(this._repository) : super(const AsyncValue.loading()) {
     fetchProjects();
   }
 
-  Future<void> fetchProjects() async {
-    state = const AsyncValue.loading();
-    try {
-      final projects = await _repository.getProjects();
-      state = AsyncValue.data(projects);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+  bool get hasMore => _page * 20 < _totalCount;
+  int get totalCount => _totalCount;
+  String get searchQuery => _search;
+
+  Future<void> fetchProjects({bool append = false}) async {
+    if (append) {
+      _isLoadingMore = true;
+    } else {
+      state = const AsyncValue.loading();
+      _page = 1;
     }
+    try {
+      final result = await _repository.getProjects(page: _page, search: _search);
+      final List<ProjectModel> projects = result['projects'];
+      _totalCount = result['count'] as int;
+      if (append && state.valueOrNull != null) {
+        state = AsyncValue.data([...state.valueOrNull!, ...projects]);
+      } else {
+        state = AsyncValue.data(projects);
+      }
+    } catch (e, stack) {
+      if (!append) state = AsyncValue.error(e, stack);
+    } finally {
+      _isLoadingMore = false;
+    }
+  }
+
+  void search(String query) {
+    _search = query;
+    _page = 1;
+    fetchProjects();
+  }
+
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !hasMore) return;
+    _page++;
+    await fetchProjects(append: true);
+  }
+
+  void refresh() {
+    _page = 1;
+    _search = '';
+    fetchProjects();
   }
 
   Future<void> addProject({

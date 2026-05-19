@@ -165,3 +165,39 @@ class TestTasks:
     def test_task_activity(self, auth_client):
         resp = auth_client.get('/api/tasks/activity/')
         assert resp.status_code == 200
+
+    def test_reports(self, auth_client):
+        resp = auth_client.get('/api/projects/reports/')
+        assert resp.status_code == 200
+        assert 'total_projects' in resp.data
+        assert 'total_tasks' in resp.data
+        assert 'completion_rate' in resp.data
+        assert 'projects_by_status' in resp.data
+
+    def test_global_search(self, auth_client):
+        auth_client.post('/api/projects/', {'title': 'Searchable Project', 'key': 'SP'}, format='json')
+        resp = auth_client.get('/api/projects/search/?q=Search')
+        assert resp.status_code == 200
+        assert len(resp.data['projects']) == 1
+        assert resp.data['projects'][0]['title'] == 'Searchable Project'
+        assert 'tasks' in resp.data
+
+    def test_global_search_tasks(self, auth_client):
+        proj = auth_client.post('/api/projects/', {'title': 'Proj Tasks', 'key': 'PT'}, format='json')
+        pk = proj.data['id']
+        auth_client.post(f'/api/projects/{pk}/tasks/', {'title': 'Fix search bug', 'status': 'TODO'}, format='json')
+        resp = auth_client.get('/api/projects/search/?q=search')
+        assert resp.status_code == 200
+        assert len(resp.data['tasks']) == 1
+        assert resp.data['tasks'][0]['project_title'] == 'Proj Tasks'
+
+    def test_global_search_empty_query(self, auth_client):
+        resp = auth_client.get('/api/projects/search/?q=')
+        assert resp.status_code == 200
+        assert resp.data['projects'] == []
+        assert resp.data['tasks'] == []
+
+    def test_global_search_short_query(self, auth_client):
+        resp = auth_client.get('/api/projects/search/?q=a')
+        assert resp.status_code == 200
+        assert resp.data['projects'] == []

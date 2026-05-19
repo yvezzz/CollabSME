@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/notification_provider.dart';
 import '../../../widgets/glass_container.dart';
 import '../projects/project_details_screen.dart';
 import 'notifications_screen.dart';
@@ -51,6 +52,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final projectsAsync = ref.watch(projectListProvider);
     final authAsync = ref.watch(authStateProvider);
     final statsAsync = ref.watch(dashboardStatsProvider);
+
 
     final user = authAsync.value;
 
@@ -266,6 +268,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// Barre latérale de navigation
   Widget _buildSidebar(BuildContext context, UserModel? user) {
+    final unreadCount = ref.watch(unreadNotificationsCountProvider).valueOrNull;
     return Container(
       width: 280,
       color: AppColors.surface,
@@ -303,7 +306,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           _sidebarItem(LucideIcons.checkSquare, "Mes Tâches", index: 1),
           if (_canViewScreen(2, user))
             _sidebarItem(LucideIcons.users, "Équipe", index: 2),
-          _sidebarItem(LucideIcons.bell, "Notifications", index: 3),
+          _sidebarItem(LucideIcons.bell, "Notifications", index: 3, badgeCount: unreadCount),
           _sidebarItem(LucideIcons.barChart3, "Rapports", index: 5),
           if (_canViewScreen(6, user))
             _sidebarItem(LucideIcons.building2, "Entreprise", index: 6),
@@ -324,7 +327,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   CircleAvatar(
                     backgroundColor: AppColors.primary,
                     child: Text(
-                      (user?.fullName != null && user!.fullName.isNotEmpty)
+                      (user != null && user.fullName.isNotEmpty)
                           ? user.fullName[0].toUpperCase()
                           : "U",
                     ),
@@ -361,7 +364,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {required int index}) {
+  Widget _sidebarItem(IconData icon, String title, {required int index, int? badgeCount}) {
     final active = _selectedIndex == index;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -384,13 +387,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 color: active ? AppColors.primary : AppColors.textSecondary,
               ),
               const SizedBox(width: 16),
-              Text(
-                title,
-                style: TextStyle(
-                  color: active ? Colors.white : AppColors.textSecondary,
-                  fontWeight: active ? FontWeight.bold : FontWeight.normal,
+              Expanded(
+                child: Text(
+                  title,
+                  style: TextStyle(
+                    color: active ? Colors.white : AppColors.textSecondary,
+                    fontWeight: active ? FontWeight.bold : FontWeight.normal,
+                  ),
                 ),
               ),
+              if (badgeCount != null && badgeCount > 0)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.danger,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    badgeCount > 99 ? "99+" : "$badgeCount",
+                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                  ),
+                ),
             ],
           ),
         ),
@@ -476,9 +493,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                               ),
                               items: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
                                   .map(
-                                    (p) => DropdownMenuItem(
-                                      value: p,
-                                      child: Text(
+                                     (p) => DropdownMenuItem(
+                                       value: p,
+                                       child: Text(
                                         p,
                                         style: const TextStyle(
                                           color: Colors.white,

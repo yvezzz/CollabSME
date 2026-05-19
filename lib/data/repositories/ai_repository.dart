@@ -51,8 +51,8 @@ class AIRepository {
   Future<List<Map<String, dynamic>>> getChatHistory() async {
     final response = await ApiClient.get('ai/chat/history/');
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => Map<String, dynamic>.from(e)).toList();
     } else {
       throw Exception("Impossible de charger l'historique du chat.");
     }

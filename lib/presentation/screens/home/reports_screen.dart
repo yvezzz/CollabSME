@@ -62,10 +62,21 @@ class ReportsScreen extends ConsumerWidget {
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (e, _) => Center(
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         const Icon(LucideIcons.alertTriangle, size: 48, color: AppColors.danger),
                         const SizedBox(height: 16),
                         Text("Erreur: $e", style: const TextStyle(color: AppColors.textSecondary)),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: () => ref.invalidate(reportProvider),
+                          icon: const Icon(LucideIcons.refreshCcw, size: 16),
+                          label: const Text("Réessayer"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -119,35 +130,16 @@ class ReportsScreen extends ConsumerWidget {
         _buildPieChart(report['projects_by_status'] as Map<String, dynamic>? ?? {}),
         const SizedBox(height: 32),
 
-        // Export buttons
+        // Export buttons (Bientôt disponible)
         _sectionTitle("EXPORT"),
         const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: GlassContainer(
-                child: ListTile(
-                  leading: const Icon(LucideIcons.fileText, color: AppColors.primary),
-                  title: const Text("Export PDF", style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text("Télécharger le rapport en PDF", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  trailing: const Icon(LucideIcons.download, size: 16, color: AppColors.primary),
-                  onTap: () {},
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: GlassContainer(
-                child: ListTile(
-                  leading: const Icon(LucideIcons.fileSpreadsheet, color: AppColors.accent),
-                  title: const Text("Export CSV", style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: const Text("Télécharger les données en CSV", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  trailing: const Icon(LucideIcons.download, size: 16, color: AppColors.accent),
-                  onTap: () {},
-                ),
-              ),
-            ),
-          ],
+        GlassContainer(
+          child: ListTile(
+            leading: const Icon(LucideIcons.fileText, color: AppColors.textSecondary),
+            title: const Text("Export PDF / CSV", style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text("Bientôt disponible", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            trailing: const Icon(LucideIcons.clock, size: 16, color: AppColors.textSecondary),
+          ),
         ),
       ],
     );
