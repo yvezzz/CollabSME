@@ -91,6 +91,20 @@ class ProjectListNotifier
       rethrow;
     }
   }
+
+  Future<void> createFromTemplate({
+    required String templateId,
+    required String title,
+  }) async {
+    try {
+      final newProject = await _repository.createFromTemplate(templateId, title);
+      state.whenData((projects) {
+        state = AsyncValue.data([newProject, ...projects]);
+      });
+    } catch (e) {
+      rethrow;
+    }
+  }
 }
 
 final dashboardStatsProvider =

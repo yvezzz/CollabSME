@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,7 +8,6 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/network/api_client.dart';
-import 'dart:convert';
 
 final reportProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final response = await ApiClient.get('projects/reports/');
@@ -30,17 +31,7 @@ class ReportsScreen extends ConsumerWidget {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24),
@@ -130,15 +121,18 @@ class ReportsScreen extends ConsumerWidget {
         _buildPieChart(report['projects_by_status'] as Map<String, dynamic>? ?? {}),
         const SizedBox(height: 32),
 
-        // Export buttons (Bientôt disponible)
+        // Export buttons
         _sectionTitle("EXPORT"),
         const SizedBox(height: 16),
         GlassContainer(
           child: ListTile(
-            leading: const Icon(LucideIcons.fileText, color: AppColors.textSecondary),
-            title: const Text("Export PDF / CSV", style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: const Text("Bientôt disponible", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-            trailing: const Icon(LucideIcons.clock, size: 16, color: AppColors.textSecondary),
+            leading: const Icon(LucideIcons.fileText, color: AppColors.primary),
+            title: const Text("Export CSV", style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text("Télécharger le rapport au format CSV", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            trailing: IconButton(
+              icon: const Icon(LucideIcons.download, color: AppColors.primary),
+              onPressed: () => _downloadCsv(context),
+            ),
           ),
         ),
       ],
@@ -240,5 +234,36 @@ class ReportsScreen extends ConsumerWidget {
         color: AppColors.textSecondary,
       ),
     );
+  }
+
+  static Future<void> _downloadCsv(BuildContext context) async {
+    try {
+      final response = await ApiClient.get('projects/reports/?format=csv');
+      if (response.statusCode != 200) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Erreur lors de l'export CSV")),
+          );
+        }
+        return;
+      }
+      final dir = Directory.systemTemp;
+      final file = File('${dir.path}/rapport_societe.csv');
+      await file.writeAsString(response.body);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("CSV exporté : ${file.path}"),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erreur : $e")),
+        );
+      }
+    }
   }
 }

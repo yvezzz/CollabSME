@@ -49,7 +49,7 @@ class AIRepository {
 
   /// Récupère l'historique des messages
   Future<List<Map<String, dynamic>>> getChatHistory() async {
-    final response = await ApiClient.get('ai/chat/history/');
+    final response = await ApiClient.get('ai/chat/');
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => Map<String, dynamic>.from(e)).toList();
@@ -59,6 +59,6 @@ class AIRepository {
   }
 
   Future<void> clearChatHistory() async {
-    await ApiClient.delete('ai/clear/');
+    await ApiClient.delete('ai/chat/');
   }
 }

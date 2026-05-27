@@ -101,21 +101,13 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
     final isDesktop = screenSize.width > 900;
     final horizontalPadding = isDesktop ? screenSize.width * 0.15 : 16.0;
 
+    final canPop = Navigator.of(context).canPop();
+
     return Scaffold(
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
@@ -124,6 +116,14 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: IconButton(
+                          icon: const Icon(LucideIcons.chevronLeft),
+                          onPressed: () => Navigator.of(context).pop(),
+                          tooltip: "Retour",
+                        ),
+                      ),
                       Text(
                         "Entreprise",
                         style: GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold),

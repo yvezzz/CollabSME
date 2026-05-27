@@ -96,13 +96,7 @@ class _AIAssistantScreenState extends ConsumerState<AIAssistantScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.background, Color(0xFF1A1A2E)],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: Column(
             children: [

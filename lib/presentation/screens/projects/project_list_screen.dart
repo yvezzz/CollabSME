@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:collabsme/data/models/project_model.dart';
+import 'package:collabsme/data/repositories/project_repository.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../providers/project_provider.dart';
@@ -9,6 +10,7 @@ import '../../providers/notification_provider.dart';
 import 'project_details_screen.dart';
 import 'package:collabsme/presentation/screens/home/notifications_screen.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../widgets/status_badge.dart';
 import '../../providers/auth_provider.dart';
@@ -35,146 +37,231 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
     final keyController = TextEditingController();
     final budgetController = TextEditingController();
     String selectedPriority = 'MEDIUM';
+    Map<String, dynamic>? selectedTemplate;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          title: Text(
-            "Nouveau Projet",
-            style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: nameController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Nom du projet *",
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.textSecondary),
+        builder: (context, setDialogState) => FutureBuilder<List<Map<String, dynamic>>>(
+          future: ProjectRepository().getTemplates(),
+          builder: (context, snapshot) {
+            final templates = snapshot.data ?? [];
+
+            return AlertDialog(
+              backgroundColor: AppColors.surface,
+              title: Text(
+                selectedTemplate != null
+                    ? '${selectedTemplate!['icon']} ${selectedTemplate!['name']}'
+                    : "Nouveau Projet",
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (templates.isNotEmpty && selectedTemplate == null) ...[
+                      Text(
+                        "OU PARTIR D'UN MODÈLE",
+                        style: GoogleFonts.outfit(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        height: 100,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: templates.length,
+                          separatorBuilder: (_, _) => const SizedBox(width: 8),
+                          itemBuilder: (_, i) {
+                            final t = templates[i];
+                            return GestureDetector(
+                              onTap: () => setDialogState(() => selectedTemplate = t),
+                              child: Container(
+                                width: 130,
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.card,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.3)),
+                                ),
+                                child: Column(
+                                  children: [
+                                    Text(t['icon'] ?? '📁', style: const TextStyle(fontSize: 28)),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      t['name'] ?? '',
+                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                                      textAlign: TextAlign.center,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Text(
+                                      "${(t['tasks'] as List?)?.length ?? 0} tâches",
+                                      style: const TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Divider(color: AppColors.textSecondary),
+                      ),
+                      const Text(
+                        "OU CRÉER À PARTIR DE ZÉRO",
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1, color: AppColors.textSecondary),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    TextField(
+                      controller: nameController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        labelText: "Nom du projet *",
+                        labelStyle: TextStyle(color: AppColors.textSecondary),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.textSecondary),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: AppColors.primary),
+                        ),
+                      ),
                     ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: keyController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Clé du projet (ex: PRJ-001)",
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.textSecondary),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: descController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Description",
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.textSecondary),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
-                    ),
-                  ),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: selectedPriority,
-                  dropdownColor: AppColors.surface,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Priorité",
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.textSecondary),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'LOW', child: Text('Basse')),
-                    DropdownMenuItem(value: 'MEDIUM', child: Text('Moyenne')),
-                    DropdownMenuItem(value: 'HIGH', child: Text('Haute')),
-                    DropdownMenuItem(
-                      value: 'CRITICAL',
-                      child: Text('Critique'),
-                    ),
+                    if (selectedTemplate == null) ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: keyController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Clé du projet (ex: PRJ-001)",
+                          labelStyle: TextStyle(color: AppColors.textSecondary),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.textSecondary),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primary),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: descController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Description",
+                          labelStyle: TextStyle(color: AppColors.textSecondary),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.textSecondary),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primary),
+                          ),
+                        ),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        initialValue: selectedPriority,
+                        dropdownColor: AppColors.surface,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Priorité",
+                          labelStyle: TextStyle(color: AppColors.textSecondary),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.textSecondary),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primary),
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'LOW', child: Text('Basse')),
+                          DropdownMenuItem(value: 'MEDIUM', child: Text('Moyenne')),
+                          DropdownMenuItem(value: 'HIGH', child: Text('Haute')),
+                          DropdownMenuItem(value: 'CRITICAL', child: Text('Critique')),
+                        ],
+                        onChanged: (v) {
+                          if (v != null) setDialogState(() => selectedPriority = v);
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: budgetController,
+                        style: const TextStyle(color: Colors.white),
+                        decoration: const InputDecoration(
+                          labelText: "Budget (FCFA)",
+                          labelStyle: TextStyle(color: AppColors.textSecondary),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.textSecondary),
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(color: AppColors.primary),
+                          ),
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                    if (selectedTemplate != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        "Le projet sera créé avec ${(selectedTemplate!['tasks'] as List).length} tâches pré-définies.",
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      ),
+                      TextButton.icon(
+                        onPressed: () => setDialogState(() => selectedTemplate = null),
+                        icon: const Icon(LucideIcons.arrowLeft, size: 16),
+                        label: const Text("Choisir un autre modèle"),
+                      ),
+                    ],
                   ],
-                  onChanged: (v) {
-                    if (v != null) setDialogState(() => selectedPriority = v);
-                  },
                 ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: budgetController,
-                  style: const TextStyle(color: Colors.white),
-                  decoration: const InputDecoration(
-                    labelText: "Budget (FCFA)",
-                    labelStyle: TextStyle(color: AppColors.textSecondary),
-                    enabledBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.textSecondary),
-                    ),
-                    focusedBorder: UnderlineInputBorder(
-                      borderSide: BorderSide(color: AppColors.primary),
-                    ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Annuler", style: TextStyle(color: AppColors.textSecondary)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (nameController.text.isNotEmpty) {
+                      if (selectedTemplate != null) {
+                        ref
+                            .read(projectListProvider.notifier)
+                            .createFromTemplate(
+                              templateId: selectedTemplate!['id'],
+                              title: nameController.text.trim(),
+                            );
+                      } else {
+                        ref
+                            .read(projectListProvider.notifier)
+                            .addProject(
+                              title: nameController.text.trim(),
+                              description: descController.text.trim(),
+                              key: keyController.text.trim().isEmpty ? null : keyController.text.trim(),
+                              priority: selectedPriority,
+                              budget: budgetController.text.trim().isEmpty ? null : double.tryParse(budgetController.text.trim()),
+                            );
+                      }
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
                   ),
-                  keyboardType: TextInputType.number,
+                  child: Text(selectedTemplate != null ? "Créer à partir du modèle" : "Créer"),
                 ),
               ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                "Annuler",
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  ref
-                      .read(projectListProvider.notifier)
-                      .addProject(
-                        title: nameController.text.trim(),
-                        description: descController.text.trim(),
-                        key: keyController.text.trim().isEmpty
-                            ? null
-                            : keyController.text.trim(),
-                        priority: selectedPriority,
-                        budget: budgetController.text.trim().isEmpty
-                            ? null
-                            : double.tryParse(budgetController.text.trim()),
-                      );
-                  Navigator.pop(context);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text("Créer"),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -236,13 +323,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
                       }
                       final project = projects[index];
                       return GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                ProjectDetailsScreen(projectId: project.id),
-                          ),
-                        ),
+                        onTap: () => Navigator.pushNamed(context, '${Routes.projectDetails}/${project.id}'),
                         child: _buildProjectCard(
                           project,
                         ).animate().fadeIn(delay: (100 * index).ms).scale(),
@@ -310,7 +391,15 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  appBar: AppBar(
+                    title: const Text("Notifications"),
+                    backgroundColor: Colors.transparent,
+                  ),
+                  body: const NotificationsScreen(),
+                ),
+              ),
             );
           },
         ),

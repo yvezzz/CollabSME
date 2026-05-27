@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/notification_provider.dart';
 import '../../../data/models/notification_model.dart';
@@ -27,11 +28,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
       case 'TASK_ASSIGNED':
       case 'STATUS_CHANGED':
       case 'COMMENT_ADDED':
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ProjectDetailsScreen(projectId: relatedId),
-          ),
-        );
+        Navigator.of(context).pushNamed('${Routes.projectDetails}/$relatedId');
         break;
       default:
         debugPrint("No navigation for notification type: ${notif.type}");

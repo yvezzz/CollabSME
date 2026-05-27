@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'presentation/screens/home/home_screen.dart';
-import 'presentation/screens/auth/login_screen.dart';
+import 'presentation/screens/public/landing_screen.dart';
 import 'presentation/screens/auth/reset_password_screen.dart';
 import 'presentation/screens/auth/accept_invitation_screen.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/theme_provider.dart';
+import 'presentation/widgets/connection_error_screen.dart';
+import 'core/network/route_helper.dart';
 
 void main() {
   usePathUrlStrategy();
@@ -128,7 +130,7 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
       darkTheme: darkTheme,
       themeMode: themeMode,
       home: authAsync.when(
-        data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
+        data: (user) => user == null ? const LandingScreen() : const HomeScreen(),
         loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
         error: (e, s) => Scaffold(
           body: Center(
@@ -150,7 +152,12 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
       ),
       onGenerateRoute: (settings) {
         if (settings.name == null) return null;
+        final route = generateRoute(settings);
+        if (route != null) return route;
         return _buildDeepLinkRoute(Uri.parse(settings.name!));
+      },
+      builder: (context, child) {
+        return ConnectionErrorOverlay(child: child!);
       },
     );
   }

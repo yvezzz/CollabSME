@@ -1,8 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Un conteneur réutilisable qui applique un effet de "verre dépoli" (Glassmorphism).
-/// Cet effet est obtenu en combinant un flou d'arrière-plan et une légère opacité.
 class GlassContainer extends StatelessWidget {
   final Widget child;
   final double borderRadius;

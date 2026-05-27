@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/task_provider.dart';
 import '../../../data/models/task_model.dart';
@@ -164,14 +165,7 @@ class MyTasksScreen extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: InkWell(
         onTap: task.projectId != null
-            ? () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TaskDetailScreen(
-                    projectId: task.projectId!,
-                    taskId: task.id,
-                  ),
-                ),
-              )
+            ? () => Navigator.of(context).pushNamed('${Routes.taskDetail}/${task.projectId}/${task.id}')
             : null,
         borderRadius: BorderRadius.circular(16),
         child: GlassContainer(

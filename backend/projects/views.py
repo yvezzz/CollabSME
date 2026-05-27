@@ -23,10 +23,11 @@ def apply_search_and_ordering(queryset, request, search_fields):
 
 from activity.models import ActivityLog
 from authentication.models import User
-from .models import Project, ProjectMember, Task, ChecklistItem, Comment, Attachment
+from .models import Project, ProjectMember, ProjectTemplate, Task, ChecklistItem, Comment, Attachment
 from .serializers import (
     ProjectSerializer,
     ProjectMemberSerializer,
+    ProjectTemplateSerializer,
     TaskSerializer,
     TaskStatusSerializer,
     TaskReorderSerializer,
@@ -209,6 +210,10 @@ def project_reports(request):
         status__in=['TODO', 'IN_PROGRESS', 'REVIEW']
     ).count()
 
+    fmt = request.query_params.get('format')
+    if fmt == 'csv':
+        return _export_reports_csv(company, projects, tasks)
+
     return Response({
         'total_projects': projects.count(),
         'total_tasks': total,
@@ -216,6 +221,34 @@ def project_reports(request):
         'overdue_tasks': overdue,
         'projects_by_status': by_status,
     })
+
+
+def _export_reports_csv(company, projects, tasks):
+    import csv
+    from django.http import HttpResponse
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="rapport_societe.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Projet', 'Tâche', 'Statut', 'Priorité', 'Assigné à', 'Date échéance', 'Heures estimées', 'Heures réelles'])
+    for project in projects.prefetch_related('tasks__assigned_to'):
+        project_tasks = tasks.filter(project=project)
+        for task in project_tasks:
+            writer.writerow([
+                project.title,
+                task.title,
+                task.get_status_display(),
+                task.get_priority_display(),
+                str(task.assigned_to) if task.assigned_to else '',
+                task.due_date.isoformat() if task.due_date else '',
+                str(task.estimated_hours or ''),
+                str(task.actual_hours or ''),
+            ])
+        if not project_tasks.exists():
+            writer.writerow([project.title, '(aucune tâche)', '', '', '', '', '', ''])
+
+    return response
 
 
 @api_view(['GET'])
@@ -315,6 +348,33 @@ def project_member_detail(request, pk, member_pk):
             member.role = role
             member.save()
         return Response(ProjectMemberSerializer(member).data)
+
+
+# ─── Workload ──────────────────────────────────────────────────────
+
+@api_view(['GET'])
+def project_workload(request, pk):
+    try:
+        project = Project.objects.get(id=pk, company=request.user.company)
+    except Project.DoesNotExist:
+        return Response({'error': 'Projet introuvable.'}, status=404)
+
+    members = ProjectMember.objects.filter(project=project).select_related('user')
+    data = []
+    for pm in members:
+        active = Task.objects.filter(project=project, assigned_to=pm.user, status__in=['TODO', 'IN_PROGRESS', 'REVIEW']).count()
+        done = Task.objects.filter(project=project, assigned_to=pm.user, status='DONE').count()
+        total = active + done
+        data.append({
+            'user_id': pm.user.id,
+            'name': f"{pm.user.first_name} {pm.user.last_name}".strip(),
+            'email': pm.user.email,
+            'role': pm.role,
+            'active_tasks': active,
+            'completed_tasks': done,
+            'total_tasks': total,
+        })
+    return Response(data)
 
 
 # ─── Tasks ─────────────────────────────────────────────────────────
@@ -525,4 +585,74 @@ def upload_attachment(request, pk, task_pk):
     return Response(
         AttachmentSerializer(attachment).data,
         status=status.HTTP_201_CREATED,
+    )
+
+
+# ─── Calendar ──────────────────────────────────────────────────────
+
+@api_view(['GET'])
+def calendar_tasks(request):
+    month = request.query_params.get('month')
+    year = request.query_params.get('year')
+    now = timezone.now()
+    m = int(month) if month else now.month
+    y = int(year) if year else now.year
+
+    tasks = Task.objects.filter(
+        project__company=request.user.company,
+        due_date__year=y,
+        due_date__month=m,
+    ).select_related('project').order_by('due_date')
+
+    data = []
+    for task in tasks:
+        data.append({
+            'id': task.id,
+            'title': task.title,
+            'status': task.status,
+            'priority': task.priority,
+            'due_date': task.due_date.isoformat() if task.due_date else None,
+            'project_id': task.project_id,
+            'project_title': task.project.title,
+        })
+    return Response(data)
+
+
+# ─── Project Templates ─────────────────────────────────────────────
+
+@api_view(['GET', 'POST'])
+def template_list(request):
+    if request.method == 'GET':
+        templates = ProjectTemplate.objects.filter(
+            Q(company=request.user.company) | Q(is_public=True)
+        ).order_by('-is_public', 'name')
+        return Response(ProjectTemplateSerializer(templates, many=True).data)
+
+    if request.method == 'POST':
+        if not request.user.role == 'ADMIN':
+            return Response({'error': 'Réservé aux admins.'}, status=403)
+        serializer = ProjectTemplateSerializer(data=request.data)
+        if serializer.is_valid():
+            template = serializer.save(company=request.user.company)
+            return Response(ProjectTemplateSerializer(template).data, status=201)
+        return Response(serializer.errors, status=400)
+
+
+@api_view(['POST'])
+def create_from_template(request):
+    template_id = request.data.get('template_id')
+    title = request.data.get('title', '')
+
+    if not template_id or not title:
+        return Response({'error': 'template_id et title requis.'}, status=400)
+
+    try:
+        template = ProjectTemplate.objects.get(id=template_id)
+    except ProjectTemplate.DoesNotExist:
+        return Response({'error': 'Template introuvable.'}, status=404)
+
+    project = template.create_project(title, request.user.company, request.user)
+    return Response(
+        {'id': project.id, 'title': project.title, 'message': 'Projet créé à partir du template.'},
+        status=201,
     )

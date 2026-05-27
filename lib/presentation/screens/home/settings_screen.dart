@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
@@ -89,17 +90,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.05),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(
@@ -354,7 +345,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   icon: LucideIcons.building2,
                   title: "Entreprise",
                   subtitle: "Modifier les informations de votre entreprise",
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CompanySettingsScreen())),
+                  onTap: () => Navigator.of(context).pushNamed(Routes.companySettings),
                 ),
                 const SizedBox(height: 12),
                 _buildSettingItem(

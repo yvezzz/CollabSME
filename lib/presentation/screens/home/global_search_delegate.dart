@@ -4,6 +4,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'dart:convert';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../core/network/route_helper.dart';
 import '../projects/project_details_screen.dart';
 
 class GlobalSearchDelegate extends SearchDelegate {
@@ -74,7 +75,7 @@ class GlobalSearchDelegate extends SearchDelegate {
                 subtitle: Text(p['key'] ?? ''),
                   onTap: () {
                   close(context, null);
-                  Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProjectDetailsScreen(projectId: '${p['id']}')));
+                  Navigator.of(context).pushNamed('${Routes.projectDetails}/${p['id']}');
                 },
               )),
             ],
@@ -89,9 +90,7 @@ class GlobalSearchDelegate extends SearchDelegate {
                 subtitle: Text("${t['project_title'] ?? ''} • ${t['status'] ?? ''}"),
                 onTap: () {
                   close(context, null);
-                  Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => ProjectDetailsScreen(projectId: '${t['project_id']}'),
-                  ));
+                  Navigator.of(context).pushNamed('${Routes.projectDetails}/${t['project_id']}');
                 },
               )),
             ],

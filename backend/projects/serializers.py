@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Project, ProjectMember, Task, ChecklistItem, Comment, Attachment
+from .models import Project, ProjectMember, ProjectTemplate, Task, ChecklistItem, Comment, Attachment
 
 
 class ChecklistItemSerializer(serializers.ModelSerializer):
@@ -62,11 +62,12 @@ class TaskSerializer(serializers.ModelSerializer):
     attachments_count = serializers.SerializerMethodField()
     checklist_items = ChecklistItemSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
+    project_title = serializers.SerializerMethodField()
 
     class Meta:
         model = Task
         fields = [
-            'id', 'public_id', 'parent_task', 'project', 'title', 'description',
+            'id', 'public_id', 'parent_task', 'project', 'project_title', 'title', 'description',
             'status', 'priority', 'assigned_to', 'assigned_to_name',
             'estimated_hours', 'actual_hours', 'tags', 'custom_fields',
             'order', 'created_at', 'updated_at', 'due_date', 'start_date',
@@ -82,6 +83,9 @@ class TaskSerializer(serializers.ModelSerializer):
         if obj.assigned_to:
             return f'{obj.assigned_to.first_name} {obj.assigned_to.last_name}'.strip()
         return None
+
+    def get_project_title(self, obj):
+        return obj.project.title if obj.project else None
 
     def get_sub_tasks_count(self, obj):
         return obj.sub_tasks.count()
@@ -145,6 +149,12 @@ class ProjectSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_by', 'created_at', 'updated_at',
                            'tasks', 'task_completion_percentage', 'member_count',
                            'actual_cost', 'company']
+
+
+class ProjectTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTemplate
+        fields = ['id', 'name', 'description', 'icon', 'is_public', 'tasks', 'created_at']
 
 
 class ProjectStatsSerializer(serializers.Serializer):

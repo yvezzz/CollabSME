@@ -6,6 +6,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/auth_provider.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../home/home_screen.dart';
 import './register_screen.dart';
@@ -190,20 +191,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final horizontalPadding = isDesktop ? screenSize.width * 0.25 : 24.0;
 
     return Scaffold(
-      body: Container(
+      body: Stack(
+        children: [
+          Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.1),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: Center(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24),
@@ -322,7 +315,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   children: [
                     const Text("Nouveau ici ? ", style: TextStyle(color: AppColors.textSecondary)),
                     TextButton(
-                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RegisterScreen())),
+                      onPressed: () => Navigator.of(context).pushNamed(Routes.register),
                       child: const Text("Créer un compte", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -331,6 +324,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
+      ),
+          Positioned(
+            top: 48,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }

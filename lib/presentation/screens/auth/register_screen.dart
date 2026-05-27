@@ -7,6 +7,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/auth_provider.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../home/home_screen.dart';
 import '../../widgets/app_text_field.dart';
@@ -150,20 +151,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final horizontalPadding = isDesktop ? screenSize.width * 0.2 : 24.0;
 
     return Scaffold(
-      body: Container(
+      body: Stack(
+        children: [
+          Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.1),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: Center(
           child: SingleChildScrollView(
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 24),
@@ -304,7 +297,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           AppTextField(
                              controller: _phoneController,
                              label: "Numéro de téléphone",
-                             hint: "+33 6 12 34 56 78",
+                              hint: "+237 6 12 34 56 78",
                              icon: LucideIcons.phone,
                              errorText: _phoneError,
                              keyboardType: TextInputType.phone,
@@ -316,7 +309,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                if (cleaned.length < 8) return "Numéro trop court (min. 8 chiffres)";
                                if (cleaned.length > 20) return "Numéro trop long (max. 20 chiffres)";
                                if (!RegExp(r'^\+?\d{7,20}$').hasMatch(cleaned)) {
-                                 return "Format invalide. Exemple: +33612345678";
+                                  return "Format invalide. Exemple: +237612345678";
                                }
                                return null;
                              },
@@ -372,6 +365,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             ),
           ),
         ),
+      ),
+          Positioned(
+            top: 48,
+            left: 16,
+            child: IconButton(
+              icon: const Icon(LucideIcons.arrowLeft, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ),
+        ],
       ),
     );
   }

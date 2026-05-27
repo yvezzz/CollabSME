@@ -61,6 +61,41 @@ class Project(models.Model):
         return self.members.count()
 
 
+class ProjectTemplate(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True, default='')
+    icon = models.CharField(max_length=10, default='📁')
+    company = models.ForeignKey('companies.Company', on_delete=models.CASCADE, null=True, blank=True, related_name='templates')
+    is_public = models.BooleanField(default=False)
+    tasks = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    def create_project(self, title, company, created_by):
+        project = Project.objects.create(
+            title=title,
+            company=company,
+            created_by=created_by,
+            status='DRAFT',
+        )
+        ProjectMember.objects.create(
+            project=project,
+            user=created_by,
+            role='ADMIN',
+        )
+        for task_data in self.tasks:
+            Task.objects.create(
+                project=project,
+                title=task_data.get('title', 'Nouvelle tâche'),
+                description=task_data.get('description', ''),
+                priority=task_data.get('priority', 'MEDIUM'),
+                created_by=created_by,
+            )
+        return project
+
+
 class ProjectMember(models.Model):
     ROLE_CHOICES = [
         ('ADMIN', 'Admin'),

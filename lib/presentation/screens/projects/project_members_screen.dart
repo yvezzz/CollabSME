@@ -1,11 +1,14 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:http/http.dart' as http;
 import 'package:collabsme/data/repositories/project_member_repository.dart';
 import 'package:collabsme/data/repositories/user_repository.dart';
 import 'package:collabsme/data/models/project_member_model.dart';
 import 'package:collabsme/data/models/user_model.dart';
+import 'package:collabsme/core/network/api_client.dart';
 import 'package:collabsme/core/constants/app_constants.dart';
 
 class ProjectMembersScreen extends ConsumerStatefulWidget {
@@ -22,6 +25,7 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
   final _userRepo = UserRepository();
   List<ProjectMemberModel>? _members;
   List<UserModel>? _companyUsers;
+  List<Map<String, dynamic>> _workload = [];
   bool _isLoading = true;
   String? _error;
   final Set<String> _loadingMemberIds = {};
@@ -41,11 +45,16 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
       final results = await Future.wait([
         _memberRepo.getProjectMembers(widget.projectId),
         _userRepo.getCompanyUsers(),
+        ApiClient.get('projects/${widget.projectId}/workload/'),
       ]);
       if (mounted) {
         setState(() {
           _members = results[0] as List<ProjectMemberModel>;
           _companyUsers = results[1] as List<UserModel>;
+          final workloadResp = results[2] as http.Response;
+          if (workloadResp.statusCode == 200) {
+            _workload = List<Map<String, dynamic>>.from(jsonDecode(workloadResp.body));
+          }
           _isLoading = false;
         });
       }
@@ -276,13 +285,15 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
 
     return RefreshIndicator(
       onRefresh: _load,
-      child: ListView.separated(
+      child: ListView(
         padding: const EdgeInsets.all(16),
-        itemCount: _members!.length,
-        separatorBuilder: (_, _) =>
-            const Divider(height: 1, color: AppColors.card),
-        itemBuilder: (context, index) {
-          final member = _members![index];
+        children: [
+          if (_workload.isNotEmpty) _buildWorkloadBanner(),
+          const SizedBox(height: 12),
+          ...List<Widget>.generate(_members!.length * 2 - 1, (index) {
+          if (index.isOdd) return const Divider(height: 1, color: AppColors.card);
+          final i = index ~/ 2;
+          final member = _members![i];
           final isLoading = _loadingMemberIds.contains(member.id);
           return ListTile(
             leading: CircleAvatar(
@@ -355,7 +366,66 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
               ],
             ),
           );
-        },
+        }),
+      ]),
+    );
+  }
+
+  Widget _buildWorkloadBanner() {
+    final totalActive = _workload.fold<int>(0, (sum, w) => sum + (w['active_tasks'] as int? ?? 0));
+    final totalDone = _workload.fold<int>(0, (sum, w) => sum + (w['completed_tasks'] as int? ?? 0));
+    final maxActive = _workload.fold<int>(0, (max, w) => (w['active_tasks'] as int? ?? 0) > max ? (w['active_tasks'] as int? ?? 0) : max);
+    final overloaded = _workload.where((w) => (w['active_tasks'] as int? ?? 0) > 5).toList();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.activity, size: 18, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text(
+                "Charge de travail",
+                style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              _workloadStat("Actives", "$totalActive", AppColors.warning),
+              const SizedBox(width: 16),
+              _workloadStat("Terminées", "$totalDone", AppColors.accent),
+              const SizedBox(width: 16),
+              _workloadStat("Max/membre", "$maxActive", AppColors.danger),
+            ],
+          ),
+          if (overloaded.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Text(
+              "⚠ ${overloaded.length} membre(s) ont plus de 5 tâches actives",
+              style: const TextStyle(fontSize: 12, color: AppColors.danger),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _workloadStat(String label, String value, Color color) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: color)),
+          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:collabsme/core/constants/app_constants.dart';
+import 'package:collabsme/core/network/route_helper.dart';
 import 'package:collabsme/presentation/providers/task_provider.dart';
 import 'package:collabsme/widgets/glass_container.dart';
 import 'package:collabsme/data/models/task_model.dart';
@@ -236,16 +237,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           _iconItem(
             LucideIcons.columns,
             "Board",
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => TaskBoardScreen(
-                    projectId: widget.projectId,
-                    projectName: 'Projet',
-                  ),
-                ),
-              );
-            },
+            onTap: () => Navigator.of(context).pushNamed('${Routes.taskBoard}/${widget.projectId}'),
           ),
           _iconItem(LucideIcons.users, "Membres", onTap: _navigateToMembers),
           _iconItem(LucideIcons.settings, "Modifier", onTap: _showEditDialog),
@@ -253,14 +245,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           _iconItem(
             LucideIcons.activity,
             "Activité",
-            onTap: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) =>
-                      ActivityLogScreen(projectId: widget.projectId),
-                ),
-              );
-            },
+            onTap: () => Navigator.of(context).pushNamed('${Routes.activityLog}/${widget.projectId}'),
           ),
         ],
       ),
@@ -439,11 +424,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   }
 
   void _navigateToMembers() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ProjectMembersScreen(projectId: widget.projectId),
-      ),
-    );
+    Navigator.of(context).pushNamed('${Routes.projectMembers}/${widget.projectId}');
   }
 
   void _showEditDialog() {
@@ -880,7 +861,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
-              gradient: AppColors.primaryGradient,
+              color: AppColors.primary,
               shape: BoxShape.circle,
             ),
             child: const Icon(

@@ -121,17 +121,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       body: Container(
         width: double.infinity,
         height: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.background,
-              AppColors.background.withValues(alpha: 0.8),
-              AppColors.primary.withValues(alpha: 0.1),
-            ],
-          ),
-        ),
+        color: AppColors.background,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),

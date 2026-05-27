@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../constants/app_constants.dart';
+import 'connection_monitor.dart';
 
 typedef _AuthedRequest =
     Future<http.Response> Function(Map<String, String> headers);
@@ -63,18 +66,32 @@ class ApiClient {
     required bool authenticated,
     Duration timeout = const Duration(seconds: 90),
   }) async {
-    var headers = await _getHeaders(authenticated: authenticated);
-    var response = await send(headers).timeout(timeout);
-    if (authenticated &&
-        response.statusCode == 401 &&
-        await getRefreshToken() != null) {
-      final refreshed = await _refreshAccessTokenIfPossible();
-      if (refreshed) {
-        headers = await _getHeaders(authenticated: true);
-        response = await send(headers).timeout(timeout);
+    try {
+      var headers = await _getHeaders(authenticated: authenticated);
+      var response = await send(headers).timeout(timeout);
+      if (authenticated &&
+          response.statusCode == 401 &&
+          await getRefreshToken() != null) {
+        final refreshed = await _refreshAccessTokenIfPossible();
+        if (refreshed) {
+          headers = await _getHeaders(authenticated: true);
+          response = await send(headers).timeout(timeout);
+        }
       }
+      return response;
+    } on TimeoutException catch (_) {
+      ConnectionMonitor.reportError();
+      rethrow;
+    } on SocketException catch (_) {
+      ConnectionMonitor.reportError();
+      rethrow;
+    } on HttpException catch (_) {
+      ConnectionMonitor.reportError();
+      rethrow;
+    } catch (_) {
+      ConnectionMonitor.reportError();
+      rethrow;
     }
-    return response;
   }
 
   /// Obtient les headers globaux requis pour toutes les requêtes

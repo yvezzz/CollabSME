@@ -143,22 +143,13 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
                         LineChartBarData(
                           spots: _getSpots(),
                           isCurved: true,
-                          gradient: const LinearGradient(
-                            colors: [AppColors.primary, AppColors.accent],
-                          ),
+                          color: AppColors.primary,
                           barWidth: 4,
                           isStrokeCapRound: true,
                           dotData: const FlDotData(show: true),
                           belowBarData: BarAreaData(
                             show: true,
-                            gradient: LinearGradient(
-                              colors: [
-                                AppColors.primary.withValues(alpha: 0.2),
-                                AppColors.accent.withValues(alpha: 0.0),
-                              ],
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                            ),
+                            color: AppColors.primary.withValues(alpha: 0.1),
                           ),
                         ),
                       ],

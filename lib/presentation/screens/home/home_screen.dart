@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../providers/project_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
@@ -15,10 +16,10 @@ import '../../../presentation/widgets/app_toast.dart';
 import '../auth/login_screen.dart';
 import './my_tasks_screen.dart';
 import './team_screen.dart';
+import './calendar_screen.dart';
 import '../../../data/models/project_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/dashboard_stats.dart';
-
 import '../../widgets/project_activity_chart.dart';
 import './ai_assistant_screen.dart';
 import 'reports_screen.dart';
@@ -73,6 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       const SettingsScreen(),
       const ReportsScreen(),
       const CompanySettingsScreen(),
+      const CalendarScreen(),
     ];
 
     final visibleIndices = [
@@ -115,6 +117,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   BottomNavigationBarItem(icon: Icon(LucideIcons.settings), label: "Paramètres"),
                   BottomNavigationBarItem(icon: Icon(LucideIcons.barChart3), label: "Rapports"),
                   BottomNavigationBarItem(icon: Icon(LucideIcons.building2), label: "Entreprise"),
+                  BottomNavigationBarItem(icon: Icon(LucideIcons.calendar), label: "Calendrier"),
                 ];
                 return items[i];
               }).toList(),
@@ -124,9 +127,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showAIAssistant() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => const AIAssistantScreen()));
+    Navigator.of(context).pushNamed(Routes.aiAssistant);
   }
 
   /// Le tableau de bord principal
@@ -266,96 +267,61 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  /// Barre latérale de navigation
   Widget _buildSidebar(BuildContext context, UserModel? user) {
     final unreadCount = ref.watch(unreadNotificationsCountProvider).valueOrNull;
     return Container(
-      width: 280,
+      width: 72,
       color: AppColors.surface,
-      padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 16),
           InkWell(
             onTap: () => setState(() => _selectedIndex = 0),
             borderRadius: BorderRadius.circular(12),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.primaryGradient,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(LucideIcons.layout, color: Colors.white),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  "CollabSME",
-                  style: GoogleFonts.outfit(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(LucideIcons.layout, color: Colors.white, size: 20),
             ),
           ),
-          const SizedBox(height: 48),
-          _sidebarItem(LucideIcons.home, "Tableau de bord", index: 0),
-          _sidebarItem(LucideIcons.checkSquare, "Mes Tâches", index: 1),
-          if (_canViewScreen(2, user))
-            _sidebarItem(LucideIcons.users, "Équipe", index: 2),
-          _sidebarItem(LucideIcons.bell, "Notifications", index: 3, badgeCount: unreadCount),
-          _sidebarItem(LucideIcons.barChart3, "Rapports", index: 5),
-          if (_canViewScreen(6, user))
-            _sidebarItem(LucideIcons.building2, "Entreprise", index: 6),
-          _sidebarItem(LucideIcons.settings, "Paramètres", index: 4),
+          const SizedBox(height: 32),
+          _sidebarIcon(LucideIcons.home, "Tableau de bord", index: 0),
+          const SizedBox(height: 4),
+          _sidebarIcon(LucideIcons.calendar, "Calendrier", index: 7),
+          const SizedBox(height: 4),
+          _sidebarIcon(LucideIcons.checkSquare, "Mes Tâches", index: 1),
+          if (_canViewScreen(2, user)) ...[
+            const SizedBox(height: 4),
+            _sidebarIcon(LucideIcons.users, "Équipe", index: 2),
+          ],
+          const SizedBox(height: 4),
+          _sidebarIcon(LucideIcons.bell, "Notifications", index: 3, badgeCount: unreadCount),
+          const SizedBox(height: 4),
+          _sidebarIcon(LucideIcons.barChart3, "Rapports", index: 5),
+          if (_canViewScreen(6, user)) ...[
+            const SizedBox(height: 4),
+            _sidebarIcon(LucideIcons.building2, "Entreprise", index: 6),
+          ],
+          const SizedBox(height: 4),
+          _sidebarIcon(LucideIcons.settings, "Paramètres", index: 4),
           const Spacer(),
-          // Profil utilisateur en bas de la sidebar
           InkWell(
             onTap: () => setState(() => _selectedIndex = 4),
-            borderRadius: BorderRadius.circular(16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      (user != null && user.fullName.isNotEmpty)
-                          ? user.fullName[0].toUpperCase()
-                          : "U",
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.fullName ?? "Utilisateur",
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          user?.displayRole ?? "Invité",
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => _showLogoutDialog(),
-                    icon: const Icon(LucideIcons.logOut, size: 18),
-                  ),
-                ],
+            borderRadius: BorderRadius.circular(20),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundColor: AppColors.primary,
+                child: Text(
+                  (user != null && user.fullName.isNotEmpty)
+                      ? user.fullName[0].toUpperCase()
+                      : "U",
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ),
@@ -364,48 +330,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _sidebarItem(IconData icon, String title, {required int index, int? badgeCount}) {
+  Widget _sidebarIcon(IconData icon, String tooltip, {required int index, int? badgeCount}) {
     final active = _selectedIndex == index;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+    return Tooltip(
+      message: tooltip,
+      preferBelow: false,
       child: InkWell(
         onTap: () => setState(() => _selectedIndex = index),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          width: 72,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active
-                ? AppColors.primary.withValues(alpha: 0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            border: active
+                ? const Border(left: BorderSide(color: AppColors.primary, width: 3))
+                : null,
           ),
-          child: Row(
+          child: Stack(
+            clipBehavior: Clip.none,
             children: [
               Icon(
                 icon,
-                size: 20,
+                size: 22,
                 color: active ? AppColors.primary : AppColors.textSecondary,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: active ? Colors.white : AppColors.textSecondary,
-                    fontWeight: active ? FontWeight.bold : FontWeight.normal,
-                  ),
-                ),
-              ),
               if (badgeCount != null && badgeCount > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.danger,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    badgeCount > 99 ? "99+" : "$badgeCount",
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                Positioned(
+                  right: -14,
+                  top: -8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      badgeCount > 99 ? "99+" : "$badgeCount",
+                      style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ),
             ],
@@ -765,11 +728,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildProjectCard(BuildContext context, ProjectModel project) {
     return InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ProjectDetailsScreen(projectId: project.id),
-        ),
-      ),
+      onTap: () => Navigator.of(context).pushNamed('${Routes.projectDetails}/${project.id}'),
       child: GlassContainer(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1024,11 +983,7 @@ class ProjectSearchDelegate extends SearchDelegate {
               subtitle: Text(project.key ?? ""),
               onTap: () {
                 close(context, null);
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => ProjectDetailsScreen(projectId: project.id),
-                  ),
-                );
+                Navigator.of(context).pushNamed('${Routes.projectDetails}/${project.id}');
               },
             );
           },

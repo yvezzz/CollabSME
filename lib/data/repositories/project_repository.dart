@@ -45,6 +45,25 @@ class ProjectRepository {
   }
 
   /// Créer un nouveau projet
+  Future<List<Map<String, dynamic>>> getTemplates() async {
+    final response = await ApiClient.get('projects/templates/');
+    if (response.statusCode == 200) {
+      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+    }
+    return [];
+  }
+
+  Future<ProjectModel> createFromTemplate(String templateId, String title) async {
+    final response = await ApiClient.post('projects/templates/create-from-template/', {
+      'template_id': templateId,
+      'title': title,
+    });
+    if (response.statusCode == 201) {
+      return ProjectModel.fromJson(jsonDecode(response.body));
+    }
+    throw Exception("Impossible de créer le projet depuis le template.");
+  }
+
   Future<ProjectModel> createProject({
     required String title,
     required String description,
