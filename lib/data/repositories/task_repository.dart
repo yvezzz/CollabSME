@@ -50,7 +50,7 @@ class TaskRepository {
     }
   }
 
-  /// Réordonnancement Kanban (même colonne ou autre) — aligné sur le backend DRF
+  /// Réordonnancement Kanban (même colonne ou autre) — aligné sur le backend Spring Boot
   Future<void> reorderTask(
     String projectId,
     String taskId,

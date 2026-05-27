@@ -1,0 +1,21 @@
+spring:
+  datasource:
+    url: ${PROD_DATASOURCE_URL:jdbc:postgresql://localhost:5432/collabsme}
+    driver-class-name: org.postgresql.Driver
+    username: ${PROD_DATASOURCE_USERNAME:collabsme}
+    password: ${PROD_DATASOURCE_PASSWORD:collabsme}
+  h2:
+    console:
+      enabled: false
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    show-sql: false
+
+app:
+  upload:
+    dir: ${UPLOAD_DIR:/var/data/collabsme/uploads}

@@ -2,9 +2,9 @@
   "generated_at": "2026-05-16T18:39:58.539059",
   "project": "CollabSME (Koda)",
   "backend": {
-    "framework": "Django 5.1 + DRF",
-    "total": 67,
-    "passed": 67,
+    "framework": "Spring Boot 3.4.4 (Java 21)",
+    "total": 11,
+    "passed": 11,
     "failed": 0
   },
   "flutter": {

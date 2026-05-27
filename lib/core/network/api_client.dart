@@ -9,7 +9,7 @@ import 'connection_monitor.dart';
 typedef _AuthedRequest =
     Future<http.Response> Function(Map<String, String> headers);
 
-/// Service centralisé pour la communication avec le backend Django
+/// Service centralisé pour la communication avec le backend Spring Boot
 /// Gère les requêtes HTTP et l'injection de token JWT
 class ApiClient {
   static const _storage = FlutterSecureStorage();

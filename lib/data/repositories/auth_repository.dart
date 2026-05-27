@@ -96,7 +96,7 @@ class AuthRepository {
           if (errorData.containsKey('detail')) {
             message = errorData['detail'];
           } else {
-            // DRF validation errors are usually a Map<String, List<String>>
+            // API validation errors are usually a Map<String, List<String>>
             errors = Map<String, dynamic>.from(errorData);
 
             // Try to find a human readable message
@@ -126,7 +126,7 @@ class AuthRepository {
     required String newPassword,
   }) async {
     await ApiClient.post('auth/password-reset/confirm/', {
-      'uid': uid,
+      'email': uid,
       'token': token,
       'new_password': newPassword,
     });

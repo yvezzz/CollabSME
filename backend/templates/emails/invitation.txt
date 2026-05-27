@@ -1,8 +1,0 @@
-Bonjour,
-
-{{ inviter_name }} vous invite à rejoindre {{ company_name }} sur Koda.
-
-Pour accepter l'invitation, utilisez le lien suivant :
-https://koda.app/invitations/accept/{{ token }}/
-
-Ce lien expire dans 7 jours.

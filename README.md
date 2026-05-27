@@ -2,7 +2,7 @@
 
 Bienvenue dans le répertoire Frontend de **CollabSME**. Ce projet est une application client riche développée avec **Flutter**, offrant une interface moderne, performante, et résolument tournée vers l'expérience utilisateur avec l'intégration d'une IA Copilote avancée.
 
-CollabSME n'est pas qu'un outil de productivité visuel : c'est un écosystème conçu pour communiquer en temps réel avec le robuste backend Django.
+CollabSME n'est pas qu'un outil de productivité visuel : c'est un écosystème conçu pour communiquer en temps réel avec le robuste backend Spring Boot.
 
 ---
 
@@ -24,7 +24,7 @@ Le projet observe une structure claire basée sur la modularité :
 lib/
 ├── core/                  # Configurations globales (Thèmes, Couleurs, Constantes)
 │   └── constants/         # (ex: app_constants.dart)
-├── data/                  # Modèles de données (Alignés sur l'API Django) et Dépôts
+├── data/                  # Modèles de données (Alignés sur l'API Spring Boot) et Dépôts
 │   ├── models/            # Company, User, Project, Task, IA Models, etc.
 │   └── repositories/      # Logique de connexion et requêtes API (REST)
 ├── presentation/          # Vues et State Management (Riverpod)
@@ -60,7 +60,7 @@ Koda est pensé pour un développement rapide. Étant donné que le projet est c
 ### Prérequis
 - Flutter SDK (3.10+) installé
 - Un éditeur de code (VS Code, Android Studio, etc.)
-- Le backend Django (localhost API) doit être en cours d'exécution.
+- Le backend Spring Boot (localhost API) doit être en cours d'exécution.
 
 ### Lancer le projet
 1. Connectez-vous ou ouvrez un terminal dans le répertoire racine :
@@ -80,7 +80,7 @@ Koda est pensé pour un développement rapide. Étant donné que le projet est c
    dart analyze
    ```
 
-*(Lors de la connexion à l'API en local via l'émulateur Android vers le backend Django, assurez-vous de lier les URL à `http://10.0.2.2:8000/api/` au lieu de `127.0.0.1`)*.
+*(Lors de la connexion à l'API en local via l'émulateur Android vers le backend Spring Boot, assurez-vous de lier les URL à `http://10.0.2.2:8000/api/` au lieu de `127.0.0.1`)*.
 
 ---
 

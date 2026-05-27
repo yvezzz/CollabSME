@@ -26,7 +26,7 @@ class AppColors {
 /// Constantes globales de l'application
 class AppConstants {
   /// Surcharge au build : `flutter run --dart-define=API_BASE_URL=http://192.168.1.xxx:8000/api/`
-  /// (appareil physique → Django sur la machine hôte). Même principe pour [wsBaseUrl].
+  /// (appareil physique → backend Spring Boot sur la machine hôte). Même principe pour [wsBaseUrl].
   /// Android émulé : http://10.0.2.2:8000/api/
   /// iOS émulé : http://127.0.0.1:8000/api/
   static const String apiBaseUrl = String.fromEnvironment(
