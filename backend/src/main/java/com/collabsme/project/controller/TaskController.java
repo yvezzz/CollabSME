@@ -56,7 +56,7 @@ public class TaskController {
                                                                  @PathVariable Long pk, @PathVariable Long taskPk,
                                                                  @RequestBody Map<String, String> body) {
         Project project = projectService.getProject(pk, user.getCompany());
-        Task task = taskService.updateTaskStatus(project, taskPk, body.get("status"));
+        Task task = taskService.updateTaskStatus(project, taskPk, body.get("status"), user);
         return ResponseEntity.ok(Map.of("status", task.getStatus().name()));
     }
 

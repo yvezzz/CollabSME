@@ -3,8 +3,10 @@ package com.collabsme.notification;
 import com.collabsme.user.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -14,9 +16,32 @@ import java.util.Map;
 public class NotificationController {
 
     private final NotificationRepository notificationRepository;
+    private final NotificationService notificationService;
 
-    public NotificationController(NotificationRepository notificationRepository) {
+    public NotificationController(NotificationRepository notificationRepository,
+                                  NotificationService notificationService) {
         this.notificationRepository = notificationRepository;
+        this.notificationService = notificationService;
+    }
+
+    @PostMapping({"/", ""})
+    @Transactional
+    public ResponseEntity<Map<String, Object>> create(@AuthenticationPrincipal User user,
+                                                       @RequestBody Map<String, String> body) {
+        String title = body.getOrDefault("title", "Notification");
+        String message = body.getOrDefault("message", "");
+        String type = body.getOrDefault("notification_type", "OTHER");
+        String relatedId = body.get("related_id");
+        Notification notification = notificationService.send(user, title, message, type, relatedId);
+        Map<String, Object> result = new java.util.HashMap<>();
+        result.put("id", notification.getId());
+        result.put("title", notification.getTitle());
+        result.put("message", notification.getMessage());
+        result.put("notification_type", notification.getNotificationType());
+        result.put("is_read", notification.isRead());
+        result.put("related_id", notification.getRelatedId() != null ? notification.getRelatedId() : "");
+        result.put("created_at", notification.getCreatedAt() != null ? notification.getCreatedAt().toString() : "");
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
     @GetMapping({"/", ""})

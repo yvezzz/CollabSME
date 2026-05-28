@@ -4,6 +4,7 @@ import com.collabsme.auth.AuthService;
 import com.collabsme.auth.dto.AuthResponse;
 import com.collabsme.auth.dto.RegisterRequest;
 import com.collabsme.config.BrevoEmailService;
+import com.collabsme.notification.NotificationService;
 import com.collabsme.user.Role;
 import com.collabsme.user.User;
 import com.collabsme.user.UserRepository;
@@ -27,15 +28,18 @@ public class InvitationController {
     private final UserRepository userRepository;
     private final AuthService authService;
     private final BrevoEmailService brevoEmailService;
+    private final NotificationService notificationService;
 
     public InvitationController(InvitationRepository invitationRepository,
                                 UserRepository userRepository,
                                 AuthService authService,
-                                BrevoEmailService brevoEmailService) {
+                                BrevoEmailService brevoEmailService,
+                                NotificationService notificationService) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
         this.authService = authService;
         this.brevoEmailService = brevoEmailService;
+        this.notificationService = notificationService;
     }
 
     @GetMapping({"/", ""})
@@ -125,6 +129,12 @@ public class InvitationController {
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);
 
+        if (invitation.getInvitedBy() != null) {
+            notificationService.send(invitation.getInvitedBy(), "Invitation acceptée",
+                    user.getFirstName() + " " + user.getLastName() + " a accepté votre invitation",
+                    "INVITATION_ACCEPTED", user.getId().toString());
+        }
+
         return ResponseEntity.status(HttpStatus.CREATED).body(authResponse);
     }
 
@@ -135,6 +145,11 @@ public class InvitationController {
                 .ifPresent(i -> {
                     i.setStatus(InvitationStatus.DECLINED);
                     invitationRepository.save(i);
+                    if (i.getInvitedBy() != null) {
+                        notificationService.send(i.getInvitedBy(), "Invitation refusée",
+                                i.getEmail() + " a refusé votre invitation",
+                                "INVITATION_DECLINED", i.getId().toString());
+                    }
                 });
         return ResponseEntity.ok(Map.of("message", "Invitation refusée."));
     }

@@ -27,7 +27,7 @@ public class SubtaskController {
                                                  @PathVariable Long pk, @PathVariable Long taskPk,
                                                  @RequestBody Map<String, String> body) {
         var project = projectService.getProject(pk, user.getCompany());
-        var item = taskService.addChecklistItem(project, taskPk, body.get("title"));
+        var item = taskService.addChecklistItem(project, taskPk, body.get("title"), user);
         return ResponseEntity.status(HttpStatus.CREATED).body(item);
     }
 
@@ -39,7 +39,7 @@ public class SubtaskController {
         var project = projectService.getProject(pk, user.getCompany());
         boolean completed = body.containsKey("is_completed") && (boolean) body.get("is_completed");
         String title = (String) body.get("title");
-        var item = taskService.updateChecklistItem(project, taskPk, subtaskPk, completed, title);
+        var item = taskService.updateChecklistItem(project, taskPk, subtaskPk, completed, title, user);
         return ResponseEntity.ok(item);
     }
 }

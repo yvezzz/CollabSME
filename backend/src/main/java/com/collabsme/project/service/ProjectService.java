@@ -4,6 +4,7 @@ import com.collabsme.activity.ActivityLog;
 import com.collabsme.activity.ActivityLogRepository;
 import com.collabsme.company.Company;
 import com.collabsme.exception.ResourceNotFoundException;
+import com.collabsme.notification.NotificationService;
 import com.collabsme.project.model.*;
 import com.collabsme.project.repository.*;
 import com.collabsme.user.Role;
@@ -28,15 +29,18 @@ public class ProjectService {
     private final TaskRepository taskRepository;
     private final ActivityLogRepository activityLogRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public ProjectService(ProjectRepository projectRepository, ProjectMemberRepository memberRepository,
                           TaskRepository taskRepository, ActivityLogRepository activityLogRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          NotificationService notificationService) {
         this.projectRepository = projectRepository;
         this.memberRepository = memberRepository;
         this.taskRepository = taskRepository;
         this.activityLogRepository = activityLogRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     public Page<Project> getProjects(Company company, String status, int page, int size) {
@@ -99,13 +103,24 @@ public class ProjectService {
         if (updates.getCustomFields() != null) project.setCustomFields(updates.getCustomFields());
         if (updates.getKey() != null) project.setKey(updates.getKey());
 
-        return projectRepository.save(project);
+        Project saved = projectRepository.save(project);
+
+        for (ProjectMember pm : memberRepository.findByProject(project)) {
+            if (!pm.getUser().getId().equals(user.getId())) {
+                notificationService.send(pm.getUser(), "Projet mis à jour",
+                        "Le projet \"" + saved.getTitle() + "\" a été modifié",
+                        "PROJECT_UPDATED", saved.getId().toString());
+            }
+        }
+
+        return saved;
     }
 
     @Transactional
     public void deleteProject(Long id, User user) {
         Project project = getProject(id, user.getCompany());
         checkRole(project, user, Role.ADMIN);
+        memberRepository.findByProject(project).forEach(mp -> memberRepository.delete(mp));
         projectRepository.delete(project);
     }
 
@@ -128,6 +143,14 @@ public class ProjectService {
         }
         project.setStatus(newStatus);
         project = projectRepository.save(project);
+
+        for (ProjectMember pm : memberRepository.findByProject(project)) {
+            if (!pm.getUser().getId().equals(user.getId())) {
+                notificationService.send(pm.getUser(), "Projet mis à jour",
+                        "Le projet \"" + project.getTitle() + "\" est maintenant : " + newStatus,
+                        "PROJECT_STATUS_CHANGED", project.getId().toString());
+            }
+        }
 
         logActivity(user.getCompany(), user, "PROJECT_UPDATED",
                 "Projet \"" + project.getTitle() + "\" : " + newStatus,
@@ -241,14 +264,22 @@ public class ProjectService {
         return memberRepository.findByProjectAndUser(project, targetUser)
                 .map(existing -> {
                     existing.setRole(parseRole(roleStr));
-                    return memberRepository.save(existing);
+                    ProjectMember saved = memberRepository.save(existing);
+                    notificationService.send(targetUser, "Rôle mis à jour",
+                            "Votre rôle dans \"" + project.getTitle() + "\" est maintenant : " + roleStr,
+                            "MEMBER_ROLE_UPDATED", project.getId().toString());
+                    return saved;
                 })
                 .orElseGet(() -> {
                     ProjectMember pm = new ProjectMember();
                     pm.setProject(project);
                     pm.setUser(targetUser);
                     pm.setRole(parseRole(roleStr));
-                    return memberRepository.save(pm);
+                    ProjectMember saved = memberRepository.save(pm);
+                    notificationService.send(targetUser, "Ajouté au projet",
+                            "Vous avez été ajouté au projet \"" + project.getTitle() + "\"",
+                            "MEMBER_ADDED", project.getId().toString());
+                    return saved;
                 });
     }
 
@@ -260,7 +291,14 @@ public class ProjectService {
         if (!pm.getProject().getId().equals(project.getId())) {
             throw new ResourceNotFoundException("Membre introuvable.");
         }
+        User removedUser = pm.getUser();
         memberRepository.delete(pm);
+
+        if (!removedUser.getId().equals(currentUser.getId())) {
+            notificationService.send(removedUser, "Retiré du projet",
+                    "Vous avez été retiré du projet \"" + project.getTitle() + "\"",
+                    "MEMBER_REMOVED", project.getId().toString());
+        }
     }
 
     @Transactional
@@ -273,7 +311,15 @@ public class ProjectService {
         }
         Role role = Role.valueOf(roleStr);
         pm.setRole(role);
-        return memberRepository.save(pm);
+        ProjectMember saved = memberRepository.save(pm);
+
+        if (!pm.getUser().getId().equals(currentUser.getId())) {
+            notificationService.send(pm.getUser(), "Rôle mis à jour",
+                    "Votre rôle dans \"" + project.getTitle() + "\" est maintenant : " + roleStr,
+                    "MEMBER_ROLE_UPDATED", project.getId().toString());
+        }
+
+        return saved;
     }
 
     public Map<String, Object> globalSearch(Company company, String query) {

@@ -4,6 +4,7 @@ import com.collabsme.activity.ActivityLog;
 import com.collabsme.activity.ActivityLogRepository;
 import com.collabsme.company.Company;
 import com.collabsme.exception.ResourceNotFoundException;
+import com.collabsme.notification.NotificationService;
 import com.collabsme.project.model.*;
 import com.collabsme.project.repository.*;
 import com.collabsme.user.User;
@@ -29,21 +30,25 @@ public class TaskService {
     private final AttachmentRepository attachmentRepository;
     private final ActivityLogRepository activityLogRepository;
     private final ProjectMemberRepository memberRepository;
+    private final NotificationService notificationService;
 
     public TaskService(TaskRepository taskRepository, ChecklistItemRepository checklistItemRepository,
                        CommentRepository commentRepository, AttachmentRepository attachmentRepository,
                        ActivityLogRepository activityLogRepository,
-                       ProjectMemberRepository memberRepository) {
+                       ProjectMemberRepository memberRepository,
+                       NotificationService notificationService) {
         this.taskRepository = taskRepository;
         this.checklistItemRepository = checklistItemRepository;
         this.commentRepository = commentRepository;
         this.attachmentRepository = attachmentRepository;
         this.activityLogRepository = activityLogRepository;
         this.memberRepository = memberRepository;
+        this.notificationService = notificationService;
     }
 
     public Page<Task> getTasks(Project project, String status, String assignedTo, String search,
                                int page, int size, String orderBy) {
+        if (size <= 0) size = 20;
         PageRequest pr = PageRequest.of(page, size);
         if (status != null && !status.isEmpty()) {
             try {
@@ -56,7 +61,7 @@ public class TaskService {
         if (search != null && !search.isEmpty()) {
             return taskRepository.search(project, search, pr);
         }
-        return null; // caller handles default
+        return taskRepository.findByProject(project, pr);
     }
 
     public Task getTask(Project project, Long taskId) {
@@ -71,6 +76,12 @@ public class TaskService {
         task.setCreatedBy(user);
         Task saved = taskRepository.save(task);
 
+        if (saved.getAssignedTo() != null && !saved.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(saved.getAssignedTo(), "Tâche assignée",
+                    "Vous avez été assigné à la tâche \"" + saved.getTitle() + "\" dans " + project.getTitle(),
+                    "TASK_ASSIGNED", saved.getId().toString());
+        }
+
         logActivity(user.getCompany(), user, "TASK_CREATED",
                 "Tâche \"" + task.getTitle() + "\" créée",
                 "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + saved.getId() + "\"}");
@@ -78,10 +89,24 @@ public class TaskService {
     }
 
     @Transactional
-    public Task updateTaskStatus(Project project, Long taskId, String newStatus) {
+    public Task updateTaskStatus(Project project, Long taskId, String newStatus, User user) {
         Task task = getTask(project, taskId);
         task.setStatus(TaskStatus.valueOf(newStatus));
         task = taskRepository.save(task);
+
+        Set<Long> notified = new HashSet<>();
+        if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(task.getAssignedTo(), "Tâche mise à jour",
+                    "La tâche \"" + task.getTitle() + "\" est maintenant : " + newStatus,
+                    "TASK_UPDATED", task.getId().toString());
+            notified.add(task.getAssignedTo().getId());
+        }
+        if (task.getCreatedBy() != null && !task.getCreatedBy().getId().equals(user.getId())
+                && !notified.contains(task.getCreatedBy().getId())) {
+            notificationService.send(task.getCreatedBy(), "Tâche mise à jour",
+                    "La tâche \"" + task.getTitle() + "\" est maintenant : " + newStatus,
+                    "TASK_UPDATED", task.getId().toString());
+        }
 
         logActivity(project.getCompany(), task.getCreatedBy() != null ? task.getCreatedBy() : null,
                 "TASK_UPDATED",
@@ -111,28 +136,60 @@ public class TaskService {
         comment.setContent(content);
         comment.setMentions(mentions != null ? mentions : "[]");
         comment.setAuthor(user);
-        return commentRepository.save(comment);
+        Comment saved = commentRepository.save(comment);
+
+        Set<Long> notified = new HashSet<>();
+        if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(task.getAssignedTo(), "Nouveau commentaire",
+                    user.getFirstName() + " a commenté la tâche \"" + task.getTitle() + "\"",
+                    "COMMENT_ADDED", task.getId().toString());
+            notified.add(task.getAssignedTo().getId());
+        }
+        if (task.getCreatedBy() != null && !task.getCreatedBy().getId().equals(user.getId())
+                && !notified.contains(task.getCreatedBy().getId())) {
+            notificationService.send(task.getCreatedBy(), "Nouveau commentaire",
+                    user.getFirstName() + " a commenté la tâche \"" + task.getTitle() + "\"",
+                    "COMMENT_ADDED", task.getId().toString());
+        }
+
+        return saved;
     }
 
     @Transactional
-    public ChecklistItem addChecklistItem(Project project, Long taskId, String title) {
+    public ChecklistItem addChecklistItem(Project project, Long taskId, String title, User user) {
         Task task = getTask(project, taskId);
         ChecklistItem item = new ChecklistItem();
         item.setTask(task);
         item.setTitle(title);
-        return checklistItemRepository.save(item);
+        ChecklistItem saved = checklistItemRepository.save(item);
+
+        if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(task.getAssignedTo(), "Nouvelle sous-tâche",
+                    "Une sous-tâche \"" + title + "\" a été ajoutée à \"" + task.getTitle() + "\"",
+                    "CHECKLIST_ADDED", task.getId().toString());
+        }
+
+        return saved;
     }
 
     @Transactional
     public ChecklistItem updateChecklistItem(Project project, Long taskId, Long itemId,
-                                              boolean isCompleted, String title) {
+                                              boolean isCompleted, String title, User user) {
         Task task = getTask(project, taskId);
         ChecklistItem item = checklistItemRepository.findById(itemId)
                 .filter(i -> i.getTask().getId().equals(task.getId()))
                 .orElseThrow(() -> new ResourceNotFoundException("Sous-tâche introuvable."));
         if (title != null) item.setTitle(title);
         item.setCompleted(isCompleted);
-        return checklistItemRepository.save(item);
+        ChecklistItem saved = checklistItemRepository.save(item);
+
+        if (isCompleted && task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(task.getAssignedTo(), "Sous-tâche terminée",
+                    "La sous-tâche \"" + saved.getTitle() + "\" de \"" + task.getTitle() + "\" est terminée",
+                    "CHECKLIST_COMPLETED", task.getId().toString());
+        }
+
+        return saved;
     }
 
     public Attachment uploadAttachment(Project project, Long taskId, MultipartFile file,
@@ -150,7 +207,23 @@ public class TaskService {
         attachment.setOriginalFilename(file.getOriginalFilename());
         attachment.setFileSize((int) file.getSize());
         attachment.setUploadedBy(user);
-        return attachmentRepository.save(attachment);
+        Attachment saved = attachmentRepository.save(attachment);
+
+        Set<Long> notified = new HashSet<>();
+        if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
+            notificationService.send(task.getAssignedTo(), "Fichier ajouté",
+                    "Un fichier \"" + file.getOriginalFilename() + "\" a été ajouté à \"" + task.getTitle() + "\"",
+                    "ATTACHMENT_ADDED", task.getId().toString());
+            notified.add(task.getAssignedTo().getId());
+        }
+        if (task.getCreatedBy() != null && !task.getCreatedBy().getId().equals(user.getId())
+                && !notified.contains(task.getCreatedBy().getId())) {
+            notificationService.send(task.getCreatedBy(), "Fichier ajouté",
+                    "Un fichier \"" + file.getOriginalFilename() + "\" a été ajouté à \"" + task.getTitle() + "\"",
+                    "ATTACHMENT_ADDED", task.getId().toString());
+        }
+
+        return saved;
     }
 
     public List<Map<String, Object>> getActivity(Company company, int limit) {

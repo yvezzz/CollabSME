@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/invitations/validate/**", "/api/invitations/accept/**", "/api/invitations/decline/**").permitAll()
                 .requestMatchers("/api/schema/**", "/api/docs/**", "/h2-console/**").permitAll()
                 .requestMatchers("/uploads/**").permitAll()
+                .requestMatchers("/ws/notifications/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
