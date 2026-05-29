@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_constants.dart';
 
 class StatusBadge extends StatelessWidget {
   final String status;
@@ -17,18 +16,21 @@ class StatusBadge extends StatelessWidget {
         label = "À faire";
         break;
       case 'ACTIVE':
+        color = Colors.green;
+        label = "Actif";
+        break;
       case 'IN_PROGRESS':
-        color = AppColors.accent;
+        color = Colors.cyan;
         label = "En cours";
         break;
       case 'DRAFT':
       case 'PLANNING':
-        color = Colors.blue;
-        label = "Planifié";
+        color = Colors.grey;
+        label = "Brouillon";
         break;
       case 'COMPLETED':
       case 'DONE':
-        color = AppColors.primary;
+        color = Colors.blue;
         label = "Terminé";
         break;
       case 'REVIEW':
@@ -36,7 +38,7 @@ class StatusBadge extends StatelessWidget {
         label = "En révision";
         break;
       case 'ARCHIVED':
-        color = Colors.grey;
+        color = Colors.redAccent;
         label = "Archivé";
         break;
       default:

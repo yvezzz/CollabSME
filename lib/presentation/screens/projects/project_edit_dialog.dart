@@ -114,8 +114,8 @@ class _ProjectEditDialogState extends ConsumerState<ProjectEditDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _priority,
+                      child:                       DropdownButtonFormField<String>(
+                        value: _priority,
                         dropdownColor: AppColors.surface,
                         decoration: InputDecoration(
                           labelText: "Priorité",
@@ -171,9 +171,9 @@ class _ProjectEditDialogState extends ConsumerState<ProjectEditDialog> {
                         controller: _budgetCtrl,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: "Budget (€)",
+                          labelText: "Budget (FCFA)",
                           prefixIcon: const Icon(
-                            LucideIcons.dollarSign,
+                            LucideIcons.coins,
                             size: 20,
                           ),
                           border: OutlineInputBorder(
@@ -185,8 +185,8 @@ class _ProjectEditDialogState extends ConsumerState<ProjectEditDialog> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: DropdownButtonFormField<String>(
-                        initialValue: _status,
+                      child:                       DropdownButtonFormField<String>(
+                        value: _status,
                         dropdownColor: AppColors.surface,
                         decoration: InputDecoration(
                           labelText: "Statut",

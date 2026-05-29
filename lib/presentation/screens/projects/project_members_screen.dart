@@ -10,6 +10,7 @@ import 'package:collabsme/data/models/project_member_model.dart';
 import 'package:collabsme/data/models/user_model.dart';
 import 'package:collabsme/core/network/api_client.dart';
 import 'package:collabsme/core/constants/app_constants.dart';
+import 'package:collabsme/presentation/providers/auth_provider.dart';
 
 class ProjectMembersScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -185,6 +186,8 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = ref.watch(authStateProvider).valueOrNull;
+    final canManage = currentUser != null && (currentUser.isCompanyAdmin || currentUser.role == 'LEAD');
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -194,7 +197,7 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
         ),
         actions: [
-          if (_availableUsers.isNotEmpty)
+          if (canManage && _availableUsers.isNotEmpty)
             PopupMenuButton<String>(
               icon: const Icon(LucideIcons.userPlus),
               tooltip: "Ajouter un membre",
@@ -247,11 +250,11 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
             ),
         ],
       ),
-      body: _buildBody(),
+      body: _buildBody(canManage: canManage),
     );
   }
 
-  Widget _buildBody() {
+  Widget _buildBody({bool canManage = false}) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -345,24 +348,26 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(LucideIcons.arrowLeftRight, size: 18),
-                  tooltip: "Changer le rôle",
-                  onPressed: isLoading ? null : () => _toggleRole(member),
-                ),
-                IconButton(
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(LucideIcons.userX, size: 18),
-                  tooltip: "Retirer",
-                  color: AppColors.danger,
-                  onPressed: isLoading ? null : () => _removeMember(member.id),
-                ),
+                if (canManage) const SizedBox(width: 8),
+                if (canManage)
+                  IconButton(
+                    icon: const Icon(LucideIcons.arrowLeftRight, size: 18),
+                    tooltip: "Changer le rôle",
+                    onPressed: isLoading ? null : () => _toggleRole(member),
+                  ),
+                if (canManage)
+                  IconButton(
+                    icon: isLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(LucideIcons.userX, size: 18),
+                    tooltip: "Retirer",
+                    color: AppColors.danger,
+                    onPressed: isLoading ? null : () => _removeMember(member.id),
+                  ),
               ],
             ),
           );

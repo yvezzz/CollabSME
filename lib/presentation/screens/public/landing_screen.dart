@@ -3,10 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/route_helper.dart';
-import '../../screens/auth/login_screen.dart';
-import '../../screens/auth/register_screen.dart';
-import 'features_screen.dart';
-import 'contact_screen.dart';
 
 class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});

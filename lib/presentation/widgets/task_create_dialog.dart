@@ -59,7 +59,7 @@ class _TaskCreateDialogState extends ConsumerState<TaskCreateDialog> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String>(
-              initialValue: _priority,
+              value: _priority,
               decoration: const InputDecoration(
                 labelText: "Priorité",
                 prefixIcon: Icon(LucideIcons.flag, size: 18),
@@ -77,7 +77,7 @@ class _TaskCreateDialogState extends ConsumerState<TaskCreateDialog> {
               loading: () => const SizedBox(height: 40),
               error: (_, _) => const SizedBox(height: 40),
               data: (members) => DropdownButtonFormField<String>(
-                initialValue: _selectedAssignee?.id,
+                value: _selectedAssignee?.id,
                 decoration: const InputDecoration(
                   labelText: "Assigné à",
                   prefixIcon: Icon(LucideIcons.user, size: 18),

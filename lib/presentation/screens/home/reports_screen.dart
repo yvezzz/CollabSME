@@ -1,13 +1,15 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:http/http.dart' as http;
 import '../../../core/constants/app_constants.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/network/api_client.dart';
+import '../../widgets/app_toast.dart';
 
 final reportProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final response = await ApiClient.get('projects/reports/');
@@ -238,31 +240,30 @@ class ReportsScreen extends ConsumerWidget {
 
   static Future<void> _downloadCsv(BuildContext context) async {
     try {
-      final response = await ApiClient.get('projects/reports/?format=csv');
+      final token = await ApiClient.getToken();
+      final url = Uri.parse('${AppConstants.apiBaseUrl}projects/reports/export/csv/');
+      final response = await http.get(url, headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+        'ngrok-skip-browser-warning': 'true',
+      });
       if (response.statusCode != 200) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Erreur lors de l'export CSV")),
-          );
+          AppToast.show(context, message: "Erreur lors de l'export CSV", type: ToastType.error);
         }
         return;
       }
-      final dir = Directory.systemTemp;
-      final file = File('${dir.path}/rapport_societe.csv');
-      await file.writeAsString(response.body);
+      final blob = html.Blob([response.bodyBytes], 'text/csv');
+      final blobUrl = html.Url.createObjectUrlFromBlob(blob);
+      html.AnchorElement(href: blobUrl)
+        ..setAttribute('download', 'rapport_taches.csv')
+        ..click();
+      html.Url.revokeObjectUrl(blobUrl);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("CSV exporté : ${file.path}"),
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        AppToast.show(context, message: "CSV téléchargé", type: ToastType.success);
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erreur : $e")),
-        );
+        AppToast.show(context, message: "Erreur : $e", type: ToastType.error);
       }
     }
   }

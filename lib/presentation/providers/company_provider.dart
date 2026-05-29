@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:collabsme/data/models/user_model.dart';
@@ -18,9 +19,18 @@ final pendingInvitationsProvider = StateNotifierProvider<PendingInvitationsNotif
 
 class PendingInvitationsNotifier extends StateNotifier<AsyncValue<List<Map<String, dynamic>>>> {
   final InvitationRepository _repository;
+  Timer? _pollTimer;
 
   PendingInvitationsNotifier(this._repository) : super(const AsyncValue.loading()) {
     fetch();
+    _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) => _silentRefresh());
+  }
+
+  Future<void> _silentRefresh() async {
+    try {
+      final invites = await _repository.getInvitations();
+      if (mounted) state = AsyncValue.data(invites);
+    } catch (_) {}
   }
 
   Future<void> fetch() async {
@@ -40,6 +50,12 @@ class PendingInvitationsNotifier extends StateNotifier<AsyncValue<List<Map<Strin
     } catch (e) {
       debugPrint("Erreur annulation invitation: $e");
     }
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    super.dispose();
   }
 }
 

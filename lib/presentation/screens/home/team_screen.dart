@@ -55,7 +55,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: screenWidth < 600 ? 1.0 : 0.8,
+                    childAspectRatio: screenWidth < 600 ? 1.6 : 1.3,
                   ),
                   itemCount: members.length,
                   itemBuilder: (context, index) => _buildMemberCard(
@@ -198,7 +198,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedRole,
+                  value: selectedRole,
                   dropdownColor: AppColors.surface,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
@@ -314,14 +314,14 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           Stack(
             children: [
               CircleAvatar(
-                radius: 40,
+                radius: 28,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
                 child: Text(
                   member.fullName.isNotEmpty
                       ? member.fullName.substring(0, 1).toUpperCase()
                       : "?",
                   style: GoogleFonts.outfit(
-                    fontSize: 24,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,
                   ),
@@ -339,17 +339,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                     ),
                     child: const Icon(
                       LucideIcons.shield,
-                      size: 14,
+                      size: 12,
                       color: Colors.white,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Text(
             member.fullName,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 4),
@@ -357,18 +357,18 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
             member.displayRole,
             style: TextStyle(
               color: roleColor,
-              fontSize: 14,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
             ),
           ),
           if (isAdmin && member.id != currentUserId) ...[
-            const SizedBox(height: 12),
-            _buildRoleActions(context, member, ref),
             const SizedBox(height: 8),
+            _buildRoleActions(context, member, ref),
+            const SizedBox(height: 6),
             GestureDetector(
               onTap: () => _showRemoveMemberDialog(member),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
                   borderRadius: BorderRadius.circular(8),
@@ -376,15 +376,15 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(LucideIcons.userX, size: 12, color: AppColors.danger),
-                    SizedBox(width: 4),
-                    Text("Retirer", style: TextStyle(fontSize: 11, color: AppColors.danger)),
+                    Icon(LucideIcons.userX, size: 10, color: AppColors.danger),
+                    SizedBox(width: 3),
+                    Text("Retirer", style: TextStyle(fontSize: 10, color: AppColors.danger)),
                   ],
                 ),
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [_socialIcon(LucideIcons.mail, member.email)],
@@ -398,12 +398,12 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     return Tooltip(
       message: tooltip,
       child: Container(
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.05),
           shape: BoxShape.circle,
         ),
-        child: Icon(icon, size: 16, color: AppColors.textSecondary),
+        child: Icon(icon, size: 13, color: AppColors.textSecondary),
       ),
     );
   }
@@ -449,7 +449,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     return GestureDetector(
       onTap: loading ? null : onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(
           border: Border.all(color: color.withValues(alpha: 0.3)),
           borderRadius: BorderRadius.circular(8),
@@ -459,17 +459,17 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
           children: [
             if (loading)
               SizedBox(
-                width: 12,
-                height: 12,
+                width: 10,
+                height: 10,
                 child: CircularProgressIndicator(strokeWidth: 2, color: color),
               )
             else
-              Icon(icon, size: 12, color: color),
-            const SizedBox(width: 4),
+              Icon(icon, size: 10, color: color),
+            const SizedBox(width: 3),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: loading ? color.withValues(alpha: 0.5) : color,
               ),
             ),

@@ -15,7 +15,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -70,7 +69,7 @@ public class ProjectService {
     }
 
     @Transactional
-    public Project createProject(Project project, User user) {
+    public Project createProject(Project project, User user, Long leadId, List<Long> memberIds) {
         project.setCompany(user.getCompany());
         project.setCreatedBy(user);
         Project saved = projectRepository.save(project);
@@ -80,6 +79,28 @@ public class ProjectService {
         pm.setUser(user);
         pm.setRole(Role.ADMIN);
         memberRepository.save(pm);
+
+        if (leadId != null && !leadId.equals(user.getId())) {
+            User lead = userRepository.findById(leadId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable"));
+            ProjectMember leadPm = new ProjectMember();
+            leadPm.setProject(saved);
+            leadPm.setUser(lead);
+            leadPm.setRole(Role.LEAD);
+            memberRepository.save(leadPm);
+        }
+
+        for (Long mid : memberIds) {
+            if (mid.equals(user.getId()) || (leadId != null && mid.equals(leadId))) continue;
+            User member = userRepository.findById(mid)
+                    .orElse(null);
+            if (member == null) continue;
+            ProjectMember mp = new ProjectMember();
+            mp.setProject(saved);
+            mp.setUser(member);
+            mp.setRole(Role.MEMBER);
+            memberRepository.save(mp);
+        }
 
         logActivity(user.getCompany(), user, "PROJECT_CREATED",
                 "Projet \"" + project.getTitle() + "\" créé",
@@ -96,7 +117,6 @@ public class ProjectService {
         if (updates.getDescription() != null) project.setDescription(updates.getDescription());
         if (updates.getStatus() != null) project.setStatus(updates.getStatus());
         if (updates.getPriority() != null) project.setPriority(updates.getPriority());
-        if (updates.getBudget() != null) project.setBudget(updates.getBudget());
         if (updates.getStartDate() != null) project.setStartDate(updates.getStartDate());
         if (updates.getEndDate() != null) project.setEndDate(updates.getEndDate());
         if (updates.getTags() != null) project.setTags(updates.getTags());
@@ -113,6 +133,9 @@ public class ProjectService {
             }
         }
 
+        logActivity(user.getCompany(), user, "PROJECT_UPDATED",
+                "Projet \"" + saved.getTitle() + "\" modifié",
+                "{\"project_id\":\"" + saved.getId() + "\"}");
         return saved;
     }
 
@@ -120,6 +143,9 @@ public class ProjectService {
     public void deleteProject(Long id, User user) {
         Project project = getProject(id, user.getCompany());
         checkRole(project, user, Role.ADMIN);
+        logActivity(user.getCompany(), user, "PROJECT_DELETED",
+                "Projet \"" + project.getTitle() + "\" supprimé",
+                "{\"project_id\":\"" + project.getId() + "\"}");
         memberRepository.findByProject(project).forEach(mp -> memberRepository.delete(mp));
         projectRepository.delete(project);
     }
@@ -248,8 +274,27 @@ public class ProjectService {
         return data;
     }
 
-    public List<ProjectMember> getMembers(Project project) {
-        return memberRepository.findByProject(project);
+    public List<Map<String, Object>> getMembers(Project project) {
+        return memberRepository.findByProject(project).stream().map(pm -> {
+            Map<String, Object> map = new LinkedHashMap<>();
+            map.put("id", pm.getId());
+            map.put("project", pm.getProject().getId());
+            User u = pm.getUser();
+            if (u != null) {
+                map.put("user", u.getId());
+                map.put("user_email", u.getEmail());
+                map.put("user_first_name", u.getFirstName());
+                map.put("user_last_name", u.getLastName());
+            } else {
+                map.put("user", null);
+                map.put("user_email", "");
+                map.put("user_first_name", "");
+                map.put("user_last_name", "");
+            }
+            map.put("role", pm.getRole().name());
+            map.put("joined_at", pm.getJoinedAt());
+            return map;
+        }).collect(Collectors.toList());
     }
 
     @Transactional
@@ -303,7 +348,7 @@ public class ProjectService {
 
     @Transactional
     public ProjectMember updateMemberRole(Project project, User currentUser, Long memberPk, String roleStr) {
-        checkRole(project, currentUser, Role.ADMIN);
+        checkRole(project, currentUser, Role.ADMIN, Role.LEAD);
         ProjectMember pm = memberRepository.findById(memberPk)
                 .orElseThrow(() -> new ResourceNotFoundException("Membre introuvable."));
         if (!pm.getProject().getId().equals(project.getId())) {
@@ -382,5 +427,36 @@ public class ProjectService {
         } catch (IllegalArgumentException e) {
             return Role.MEMBER;
         }
+    }
+
+    public String generateCsvExport(Company company) {
+        List<Project> projects = projectRepository.findByCompany(company);
+        StringBuilder sb = new StringBuilder();
+        sb.append("ID;Titre;Projet;Statut;Priorité;Assigné;Date création;Date échéance;Heures estimées;Heures réelles;Tags\n");
+        for (Project project : projects) {
+            List<Task> tasks = taskRepository.findByProjectOrdered(project);
+            for (Task task : tasks) {
+                sb.append(task.getId()).append(";");
+                sb.append(escapeCsv(task.getTitle())).append(";");
+                sb.append(escapeCsv(project.getTitle())).append(";");
+                sb.append(task.getStatus() != null ? task.getStatus().name() : "").append(";");
+                sb.append(task.getPriority() != null ? task.getPriority().name() : "").append(";");
+                sb.append(task.getAssignedTo() != null ? escapeCsv(task.getAssignedTo().getFirstName() + " " + task.getAssignedTo().getLastName()) : "").append(";");
+                sb.append(task.getCreatedAt() != null ? task.getCreatedAt().toLocalDate().toString() : "").append(";");
+                sb.append(task.getDueDate() != null ? task.getDueDate().toString() : "").append(";");
+                sb.append(task.getEstimatedHours() != null ? task.getEstimatedHours().toString() : "").append(";");
+                sb.append(task.getActualHours() != null ? task.getActualHours().toString() : "").append(";");
+                sb.append(escapeCsv(task.getTags())).append("\n");
+            }
+        }
+        return sb.toString();
+    }
+
+    private String escapeCsv(String value) {
+        if (value == null) return "";
+        if (value.contains(";") || value.contains("\"") || value.contains("\n")) {
+            return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+        return value;
     }
 }

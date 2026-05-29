@@ -24,8 +24,8 @@ class CompanyRepository {
   Future<List<UserModel>> getMembers() async {
     final response = await ApiClient.get('companies/members/');
     if (response.statusCode == 200) {
-      final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
+        final dynamic decoded = jsonDecode(response.body);
+        final List data = decoded is Map ? (decoded['results'] is List ? decoded['results'] : []) : (decoded is List ? decoded : []);
       return data.map((json) => UserModel.fromJson(json)).toList();
     }
     return [];

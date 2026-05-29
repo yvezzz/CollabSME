@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import 'connection_monitor.dart';
 
@@ -12,15 +14,36 @@ typedef _AuthedRequest =
 /// Service centralisé pour la communication avec le backend Spring Boot
 /// Gère les requêtes HTTP et l'injection de token JWT
 class ApiClient {
-  static const _storage = FlutterSecureStorage();
+  static final bool _isWeb = kIsWeb;
+  static late final SharedPreferences _prefs;
 
   static const String _tokenKey = 'collabsme_access_token';
   static const String _refreshKey = 'collabsme_refresh_token';
+
+  static Future<void> init() async {
+    _prefs = await SharedPreferences.getInstance();
+  }
 
   /// Callback déclenché quand les tokens sont supprimés (session expirée)
   static void Function()? onSessionExpired;
 
   static Future<bool>? _ongoingRefresh;
+
+  static Future<String?> _read(String key) async => _isWeb ? _prefs.getString(key) : await const FlutterSecureStorage().read(key: key);
+  static Future<void> _write(String key, String value) async {
+    if (_isWeb) {
+      await _prefs.setString(key, value);
+    } else {
+      await const FlutterSecureStorage().write(key: key, value: value);
+    }
+  }
+  static Future<void> _delete(String key) async {
+    if (_isWeb) {
+      await _prefs.remove(key);
+    } else {
+      await const FlutterSecureStorage().delete(key: key);
+    }
+  }
 
   static Future<bool> _refreshAccessTokenIfPossible() {
     _ongoingRefresh ??= _performTokenRefresh().whenComplete(() {
@@ -105,7 +128,7 @@ class ApiClient {
 
     if (authenticated) {
       // Ajoute le token JWT de l'utilisateur s'il est connecté
-      final token = await _storage.read(key: _tokenKey);
+      final token = await _read(_tokenKey);
       if (token != null) {
         headers['Authorization'] = 'Bearer $token';
       }
@@ -116,34 +139,34 @@ class ApiClient {
 
   /// Sauvegarde du token d'authentification après le login
   static Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+    await _write(_tokenKey, token);
   }
 
   /// Sauvegarde du token de rafraîchissement
   static Future<void> saveRefreshToken(String token) async {
-    await _storage.write(key: _refreshKey, value: token);
+    await _write(_refreshKey, token);
   }
 
   /// Suppression des tokens lors de la déconnexion
   static Future<void> removeToken() async {
-    await _storage.delete(key: _tokenKey);
-    await _storage.delete(key: _refreshKey);
+    await _delete(_tokenKey);
+    await _delete(_refreshKey);
     onSessionExpired?.call();
   }
 
   /// Récupération du token d'accès
   static Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    return await _read(_tokenKey);
   }
 
   /// Récupération du token de rafraîchissement
   static Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshKey);
+    return await _read(_refreshKey);
   }
 
   /// Suppression du token de rafraîchissement spécifiquement
   static Future<void> removeRefreshToken() async {
-    await _storage.delete(key: _refreshKey);
+    await _delete(_refreshKey);
   }
 
   /// Requête GET (Exemple: Récupérer les projets `api/projects/`)
@@ -223,7 +246,7 @@ class ApiClient {
     final request = http.MultipartRequest('POST', url);
 
     if (authenticated) {
-      final token = await _storage.read(key: _tokenKey);
+      final token = await _read(_tokenKey);
       if (token != null) {
         request.headers['Authorization'] = 'Bearer $token';
       }

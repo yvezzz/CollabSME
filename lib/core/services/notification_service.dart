@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
-import 'package:web_socket_channel/io.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../constants/app_constants.dart';
 import '../../data/models/notification_model.dart';
@@ -47,10 +45,7 @@ class NotificationService {
       );
       debugPrint("WS connecting with token: ${token.substring(0, 10)}...");
 
-      final ws = await WebSocket.connect(wsUrl.toString()).timeout(
-        const Duration(seconds: 10),
-      );
-      _channel = IOWebSocketChannel(ws);
+      _channel = WebSocketChannel.connect(wsUrl);
       _isConnected = true;
       _connecting = false;
       _reconnectAttempts = 0;

@@ -8,6 +8,7 @@ import com.collabsme.project.repository.TaskRepository;
 import com.collabsme.user.User;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
@@ -43,12 +44,16 @@ public class AIController {
     @GetMapping("/chat/")
     public ResponseEntity<?> history(@AuthenticationPrincipal User user,
                                       @RequestParam(defaultValue = "50") int limit) {
-        var chats = aiChatRepository.findTop20ByUserOrderByCreatedAtDesc(user);
-        java.util.Collections.reverse(chats);
+        var chats = aiChatRepository.findByUserOrderByCreatedAtAsc(user);
+        int size = Math.min(Math.max(limit, 1), 100);
+        if (chats.size() > size) {
+            chats = chats.subList(chats.size() - size, chats.size());
+        }
         return ResponseEntity.ok(chats);
     }
 
     @DeleteMapping("/chat/")
+    @Transactional
     public ResponseEntity<Void> clear(@AuthenticationPrincipal User user) {
         aiChatRepository.deleteByUser(user);
         return ResponseEntity.noContent().build();

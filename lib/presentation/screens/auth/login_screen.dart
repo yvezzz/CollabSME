@@ -9,7 +9,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/network/route_helper.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../home/home_screen.dart';
-import './register_screen.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_toast.dart';
 
@@ -54,8 +53,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .login(email, password);
 
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const HomeScreen()));
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const HomeScreen()), (route) => false);
       }
     } catch (e) {
       if (mounted) {

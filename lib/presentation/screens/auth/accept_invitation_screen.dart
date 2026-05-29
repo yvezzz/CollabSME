@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -9,16 +10,17 @@ import '../../../data/repositories/invitation_repository.dart';
 import '../home/home_screen.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../../widgets/app_toast.dart';
+import '../../providers/auth_provider.dart';
 
-class AcceptInvitationScreen extends StatefulWidget {
+class AcceptInvitationScreen extends ConsumerStatefulWidget {
   final String token;
   const AcceptInvitationScreen({super.key, required this.token});
 
   @override
-  State<AcceptInvitationScreen> createState() => _AcceptInvitationScreenState();
+  ConsumerState<AcceptInvitationScreen> createState() => _AcceptInvitationScreenState();
 }
 
-class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
+class _AcceptInvitationScreenState extends ConsumerState<AcceptInvitationScreen> {
   final _invitationRepo = InvitationRepository();
   final _formKey = GlobalKey<FormState>();
   final _firstNameController = TextEditingController();
@@ -69,6 +71,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
       );
 
       if (mounted) {
+        ref.read(authStateProvider.notifier).checkSession();
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const HomeScreen()),
           (route) => false,
@@ -185,7 +188,7 @@ class _AcceptInvitationScreenState extends State<AcceptInvitationScreen> {
           const SizedBox(height: 24),
 
           Text(
-            "Bienvenue chez ${_invitationData?['company_name']}",
+            "Bienvenue chez ${_invitationData?['company']}",
             textAlign: TextAlign.center,
             style: GoogleFonts.outfit(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
           ).animate().fadeIn().slideY(begin: -0.2, end: 0),

@@ -5,12 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_toast.dart';
-import 'company_settings_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -25,12 +23,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late TextEditingController _lastNameController;
   late TextEditingController _phoneController;
   late TextEditingController _bioController;
-  late TextEditingController _avatarUrlController;
   bool _isEditing = false;
   bool _isSavingProfile = false;
   bool _isLoggingOut = false;
   bool _isDeletingAccount = false;
-  bool _isSendingReset = false;
   bool _notificationsEnabled = true;
 
   @override
@@ -40,7 +36,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _lastNameController = TextEditingController();
     _phoneController = TextEditingController();
     _bioController = TextEditingController();
-    _avatarUrlController = TextEditingController();
   }
 
   @override
@@ -60,7 +55,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _lastNameController.dispose();
     _phoneController.dispose();
     _bioController.dispose();
-    _avatarUrlController.dispose();
     super.dispose();
   }
 
@@ -71,7 +65,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _lastNameController.text = user.lastName;
     _phoneController.text = user.phoneNumber ?? '';
     _bioController.text = user.bio ?? '';
-    _avatarUrlController.text = user.avatarUrl ?? '';
     setState(() => _isEditing = true);
   }
 
@@ -129,21 +122,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               CircleAvatar(
                                 radius: 40,
                                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                                backgroundImage: (user?.avatarUrl != null && user!.avatarUrl!.isNotEmpty)
-                                    ? NetworkImage(user.avatarUrl!)
-                                    : null,
-                                child: (user?.avatarUrl == null || user!.avatarUrl!.isEmpty)
-                                    ? Text(
-                                        (user?.fullName.isNotEmpty == true)
-                                            ? user!.fullName.substring(0, 1).toUpperCase()
-                                            : "U",
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 24,
-                                          color: AppColors.primary,
-                                        ),
-                                      )
-                                    : null,
+                                child: Text(
+                                  (user?.fullName.isNotEmpty == true)
+                                      ? user!.fullName.substring(0, 1).toUpperCase()
+                                      : "U",
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
                               ),
                               const SizedBox(width: 20),
                               Flexible(
@@ -166,6 +154,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       ),
                                       softWrap: true,
                                     ),
+                                    const SizedBox(height: 8),
+                                    Wrap(
+                                      spacing: 8,
+                                      runSpacing: 4,
+                                      children: [
+                                        _infoBadge(user?.displayRole ?? "Membre", AppColors.primary),
+                                        if (user?.isCompanyAdmin == true)
+                                          _infoBadge("Admin", AppColors.accent),
+                                      ],
+                                    ),
+                                    if (!_isEditing && user != null && (user.bio?.isNotEmpty == true)) ...[
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        user.bio!,
+                                        style: const TextStyle(
+                                          color: AppColors.textSecondary,
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                        softWrap: true,
+                                      ),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -240,12 +250,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   RegExp(r'[\d\s\+\-\(\)]'),
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 16),
-                            AppTextField(
-                              controller: _avatarUrlController,
-                              label: "Photo de profil (URL)",
-                              icon: LucideIcons.image,
                             ),
                             const SizedBox(height: 16),
                             AppTextField(
@@ -339,15 +343,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
 
                 const SizedBox(height: 32),
-                _sectionTitle("PRÉFÉRENCES"),
-
+                _sectionTitle("MEMBRES"),
                 _buildSettingItem(
-                  icon: LucideIcons.building2,
-                  title: "Entreprise",
-                  subtitle: "Modifier les informations de votre entreprise",
-                  onTap: () => Navigator.of(context).pushNamed(Routes.companySettings),
+                  icon: LucideIcons.users,
+                  title: "Gérer les membres",
+                  subtitle: "Inviter, promouvoir, retirer des collaborateurs",
+                  onTap: () => Navigator.of(context).pushNamed('/team'),
                 ),
-                const SizedBox(height: 12),
+
+                const SizedBox(height: 32),
+                _sectionTitle("PRÉFÉRENCES"),
                 _buildSettingItem(
                   icon: LucideIcons.bell,
                   title: "Notifications",
@@ -376,16 +381,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 32),
-                _sectionTitle("SÉCURITÉ"),
-                _buildSettingItem(
-                  icon: LucideIcons.lock,
-                  title: "Mot de passe",
-                  subtitle:
-                      "Recevoir un e-mail pour changer votre mot de passe",
-                  onTap: () => _showPasswordConfirmDialog(context, user),
-                ),
-
                 const SizedBox(height: 48),
                 _buildLogoutButton(context),
 
@@ -411,9 +406,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             phoneNumber: _phoneController.text.trim().isEmpty
                 ? null
                 : _phoneController.text.trim(),
-            avatarUrl: _avatarUrlController.text.trim().isEmpty
-                ? null
-                : _avatarUrlController.text.trim(),
             bio: _bioController.text.trim().isEmpty
                 ? null
                 : _bioController.text.trim(),
@@ -437,120 +429,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     } finally {
       if (mounted) setState(() => _isSavingProfile = false);
     }
-  }
-
-  void _showPasswordConfirmDialog(BuildContext context, dynamic user) async {
-    if (user == null) return;
-    final passwordController = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    showDialog(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.surface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text(
-            "Confirmation",
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Form(
-            key: formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  "Entrez votre mot de passe actuel pour recevoir un e-mail de réinitialisation.",
-                ),
-                const SizedBox(height: 20),
-                AppTextField(
-                  controller: passwordController,
-                  label: "Mot de passe actuel",
-                  icon: LucideIcons.lock,
-                  obscure: true,
-                  isPassword: true,
-                  validator: (v) {
-                    if (v == null || v.isEmpty) return "Mot de passe requis";
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: _isSendingReset ? null : () => Navigator.pop(ctx),
-              child: const Text(
-                "Annuler",
-                style: TextStyle(color: AppColors.textSecondary),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: _isSendingReset
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDialogState(() => _isSendingReset = true);
-                      Navigator.pop(ctx);
-                      if (!context.mounted) return;
-                      try {
-                        final verified = await ref
-                            .read(authRepositoryProvider)
-                            .verifyPassword(
-                              user.email,
-                              passwordController.text,
-                            );
-                        if (!context.mounted) return;
-                        if (!verified) {
-                          AppToast.show(
-                            context,
-                            message: "Mot de passe actuel incorrect",
-                            type: ToastType.error,
-                          );
-                          return;
-                        }
-                        await ref
-                            .read(authRepositoryProvider)
-                            .requestPasswordReset(user.email);
-                        if (!context.mounted) return;
-                        AppToast.show(
-                          context,
-                          message: "E-mail de réinitialisation envoyé",
-                          type: ToastType.success,
-                        );
-                      } catch (e) {
-                        if (context.mounted) {
-                          AppToast.show(
-                            context,
-                            message: "Erreur : $e",
-                            type: ToastType.error,
-                          );
-                        }
-                      } finally {
-                        if (mounted) setState(() => _isSendingReset = false);
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: _isSendingReset
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text("Envoyer"),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   void _showDeleteAccountDialog() {
@@ -653,6 +531,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             child: const Text("Confirmer la suppression"),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _infoBadge(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 12, color: color, fontWeight: FontWeight.bold),
       ),
     );
   }

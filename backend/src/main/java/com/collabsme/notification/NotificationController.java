@@ -68,17 +68,9 @@ public class NotificationController {
     }
 
     @PostMapping("/mark_all_as_read/")
+    @Transactional
     public ResponseEntity<Map<String, Integer>> markAllAsRead(@AuthenticationPrincipal User user) {
-        Page<Notification> page = notificationRepository
-                .findByUserOrderByCreatedAtDesc(user, PageRequest.of(0, Integer.MAX_VALUE));
-        int updated = 0;
-        for (Notification n : page.getContent()) {
-            if (!n.isRead()) {
-                n.setRead(true);
-                notificationRepository.save(n);
-                updated++;
-            }
-        }
+        int updated = notificationRepository.markAllAsReadByUser(user);
         return ResponseEntity.ok(Map.of("updated", updated));
     }
 }

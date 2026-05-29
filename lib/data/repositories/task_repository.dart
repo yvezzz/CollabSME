@@ -11,7 +11,7 @@ class TaskRepository {
 
     if (response.statusCode == 200) {
       final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
+      final List data = decoded is Map ? (decoded['content'] is List ? decoded['content'] : []) : (decoded is List ? decoded : []);
       return data.map((json) => TaskModel.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des tâches");
@@ -23,7 +23,7 @@ class TaskRepository {
     final response = await ApiClient.get('tasks/my-tasks/');
     if (response.statusCode == 200) {
       final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
+      final List data = decoded is Map ? (decoded['content'] is List ? decoded['content'] : []) : (decoded is List ? decoded : []);
       return data.map((json) => TaskModel.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération de mes tâches");

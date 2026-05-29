@@ -27,12 +27,12 @@ class ProjectRepository {
       final response = await ApiClient.get('projects/?$query');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final List results = data is Map ? (data['results'] ?? []) : data;
-        final count = data is Map ? (data['count'] ?? results.length) : results.length;
+        final dynamic decoded = jsonDecode(response.body);
+        final List results = decoded is Map ? (decoded['results'] is List ? decoded['results'] : []) : (decoded is List ? decoded : []);
+        final int total = decoded is Map ? (decoded['count'] ?? results.length) : results.length;
         return {
           'projects': results.map((json) => ProjectModel.fromJson(json)).toList(),
-          'count': count,
+          'count': total,
         };
       } else {
         throw Exception(
@@ -71,6 +71,10 @@ class ProjectRepository {
     String status = 'DRAFT',
     String priority = 'MEDIUM',
     double? budget,
+    String? startDate,
+    String? endDate,
+    int? leadId,
+    List<int>? memberIds,
   }) async {
     try {
       final Map<String, dynamic> data = {
@@ -81,11 +85,17 @@ class ProjectRepository {
       };
       if (key != null) data['key'] = key;
       if (budget != null) data['budget'] = budget;
+      if (startDate != null) data['startDate'] = startDate;
+      if (endDate != null) data['endDate'] = endDate;
+      if (leadId != null) data['lead_id'] = leadId;
+      if (memberIds != null && memberIds.isNotEmpty) data['member_ids'] = memberIds;
 
       final response = await ApiClient.post('projects/', data);
 
       if (response.statusCode == 201) {
-        return ProjectModel.fromJson(jsonDecode(response.body));
+        final body = jsonDecode(response.body);
+        if (body is! Map<String, dynamic>) throw Exception("Réponse inattendue du serveur");
+        return ProjectModel.fromJson(body);
       } else {
         throw Exception("Impossible de créer le projet : ${response.body}");
       }

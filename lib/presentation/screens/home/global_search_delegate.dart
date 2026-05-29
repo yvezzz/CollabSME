@@ -5,7 +5,6 @@ import 'dart:convert';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/route_helper.dart';
-import '../projects/project_details_screen.dart';
 
 class GlobalSearchDelegate extends SearchDelegate {
   final WidgetRef ref;

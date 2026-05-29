@@ -5,14 +5,13 @@ spring:
   application:
     name: collabsme-backend
   datasource:
-    url: jdbc:h2:file:./data/collabsme;DB_CLOSE_DELAY=-1
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${DATASOURCE_URL:jdbc:mysql://localhost:3306/collabsme?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${DATASOURCE_USERNAME:root}
+    password: ${DATASOURCE_PASSWORD:}
   h2:
     console:
-      enabled: true
-      path: /h2-console
+      enabled: false
   jpa:
     open-in-view: true
     hibernate:
@@ -20,7 +19,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: true
   jackson:
     serialization:
@@ -30,6 +29,7 @@ spring:
     default-property-inclusion: non_null
 
 app:
+  base-url: ${APP_BASE_URL:https://collabsme-7e261.web.app}
   jwt:
     secret: collabsme-jwt-secret-key-change-in-production-must-be-at-least-256-bits-long
     access-token-expiration: 3600000
@@ -40,6 +40,12 @@ app:
     url: https://openrouter.ai/api/v1/chat/completions
   upload:
     dir: ${UPLOAD_DIR:./uploads}
+
+logging:
+  file:
+    name: spring.log
+  level:
+    com.collabsme: DEBUG
 
 springdoc:
   api-docs:

@@ -8,7 +8,6 @@ import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/notification_provider.dart';
 import '../../../data/models/notification_model.dart';
-import '../../screens/projects/project_details_screen.dart';
 import 'package:intl/intl.dart';
 
 class NotificationsScreen extends ConsumerStatefulWidget {

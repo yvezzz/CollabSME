@@ -23,7 +23,6 @@ void main() {
         'company': '456',
         'role': 'ADMIN',
         'is_company_admin': true,
-        'avatar_url': 'https://example.com/avatar.png',
         'bio': 'Développeur',
       };
       final user = UserModel.fromJson(json);
@@ -35,7 +34,6 @@ void main() {
       expect(user.companyId, '456');
       expect(user.role, 'ADMIN');
       expect(user.isCompanyAdmin, isTrue);
-      expect(user.avatarUrl, 'https://example.com/avatar.png');
       expect(user.bio, 'Développeur');
       expect(user.displayRole, 'Admin');
     });

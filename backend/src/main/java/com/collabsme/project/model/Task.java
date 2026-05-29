@@ -49,7 +49,7 @@ public class Task {
     private String customFields = "{}";
 
     @Column(name = "item_order")
-    private int order = 0;
+    private Integer order = 0;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
@@ -97,8 +97,8 @@ public class Task {
     public void setTags(String tags) { this.tags = tags; }
     public String getCustomFields() { return customFields; }
     public void setCustomFields(String customFields) { this.customFields = customFields; }
-    public int getOrder() { return order; }
-    public void setOrder(int order) { this.order = order; }
+    public Integer getOrder() { return order; }
+    public void setOrder(Integer order) { this.order = order; }
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }

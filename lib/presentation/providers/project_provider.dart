@@ -75,6 +75,10 @@ class ProjectListNotifier
     String? key,
     String? priority,
     double? budget,
+    String? startDate,
+    String? endDate,
+    int? leadId,
+    List<int>? memberIds,
   }) async {
     try {
       final newProject = await _repository.createProject(
@@ -83,6 +87,10 @@ class ProjectListNotifier
         key: key,
         priority: priority ?? 'MEDIUM',
         budget: budget,
+        startDate: startDate,
+        endDate: endDate,
+        leadId: leadId,
+        memberIds: memberIds,
       );
       state.whenData((projects) {
         state = AsyncValue.data([newProject, ...projects]);

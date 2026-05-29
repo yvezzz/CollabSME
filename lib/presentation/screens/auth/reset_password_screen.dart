@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:collabsme/presentation/providers/auth_provider.dart';
+import 'package:collabsme/core/exceptions/api_exception.dart';
 import 'login_screen.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
@@ -30,7 +31,23 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   final _confirmPasswordController = TextEditingController();
   
   bool _isLoading = false;
+  bool _isResending = false;
   String? _error;
+
+  Future<void> _handleResend() async {
+    setState(() => _isResending = true);
+    try {
+      await ref.read(authRepositoryProvider).requestPasswordReset(widget.email);
+      if (mounted) {
+        AppToast.show(context, message: "Nouvel email envoyé !", type: ToastType.success);
+        _error = null;
+      }
+    } catch (e) {
+      if (mounted) AppToast.show(context, message: "Erreur d'envoi", type: ToastType.error);
+    } finally {
+      if (mounted) setState(() => _isResending = false);
+    }
+  }
 
   Future<void> _handleReset() async {
     if (!_formKey.currentState!.validate()) return;
@@ -125,14 +142,26 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        ),
-                        child: const Text(
-                          "Retour à la connexion",
-                          style: TextStyle(color: AppColors.primary),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          TextButton(
+                            onPressed: _isResending ? null : _handleResend,
+                            child: _isResending
+                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                                : const Text("Renvoyer l'email", style: TextStyle(color: AppColors.primary)),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            ),
+                            child: const Text(
+                              "Retour à la connexion",
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
 

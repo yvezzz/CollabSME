@@ -21,6 +21,9 @@ public class CompanyService {
 
     @Transactional(readOnly = true)
     public CompanyDto getCompany(User user) {
+        if (user.getCompany() == null || user.getCompany().getId() == null) {
+            throw new ResourceNotFoundException("Aucune entreprise associée.");
+        }
         Company company = companyRepository.findById(user.getCompany().getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Aucune entreprise associée."));
         return CompanyDto.fromCompany(company);
@@ -28,15 +31,18 @@ public class CompanyService {
 
     @Transactional
     public CompanyDto updateCompany(User user, CompanyDto dto) {
-        Company company = user.getCompany();
-        if (company == null) {
+        if (user.getCompany() == null || user.getCompany().getId() == null) {
             throw new ResourceNotFoundException("Aucune entreprise associée.");
         }
+        Company company = companyRepository.findById(user.getCompany().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Aucune entreprise associée."));
         if (dto.getName() != null) company.setName(dto.getName());
         if (dto.getSector() != null) company.setSector(dto.getSector());
         if (dto.getSize() != null) company.setSize(dto.getSize());
         if (dto.getWebsite() != null) company.setWebsite(dto.getWebsite());
         if (dto.getBillingEmail() != null) company.setBillingEmail(dto.getBillingEmail());
+        if (dto.getPhone() != null) company.setPhone(dto.getPhone());
+        if (dto.getNif() != null) company.setNif(dto.getNif());
         if (dto.getAddress() != null) company.setAddress(dto.getAddress());
         if (dto.getCity() != null) company.setCity(dto.getCity());
         if (dto.getPostalCode() != null) company.setPostalCode(dto.getPostalCode());
@@ -51,10 +57,13 @@ public class CompanyService {
         if (!currentUser.isCompanyAdmin()) {
             throw new SecurityException("Action non autorisée.");
         }
-        Company company = currentUser.getCompany();
+        if (currentUser.getCompany() == null) {
+            throw new ResourceNotFoundException("Aucune entreprise associée.");
+        }
+        Long companyId = currentUser.getCompany().getId();
         User target = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
-        if (!company.equals(target.getCompany())) {
+        if (target.getCompany() == null || !companyId.equals(target.getCompany().getId())) {
             throw new ResourceNotFoundException("Utilisateur introuvable.");
         }
         if (target.getId().equals(currentUser.getId())) {
@@ -71,10 +80,13 @@ public class CompanyService {
         if (!currentUser.isCompanyAdmin()) {
             throw new SecurityException("Action non autorisée.");
         }
-        Company company = currentUser.getCompany();
+        if (currentUser.getCompany() == null) {
+            throw new ResourceNotFoundException("Aucune entreprise associée.");
+        }
+        Long companyId = currentUser.getCompany().getId();
         User target = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Utilisateur introuvable."));
-        if (!company.equals(target.getCompany())) {
+        if (target.getCompany() == null || !companyId.equals(target.getCompany().getId())) {
             throw new ResourceNotFoundException("Utilisateur introuvable.");
         }
         try {

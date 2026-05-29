@@ -1,18 +1,15 @@
 spring:
   datasource:
-    url: ${PROD_DATASOURCE_URL:jdbc:postgresql://localhost:5432/collabsme}
-    driver-class-name: org.postgresql.Driver
-    username: ${PROD_DATASOURCE_USERNAME:collabsme}
-    password: ${PROD_DATASOURCE_PASSWORD:collabsme}
-  h2:
-    console:
-      enabled: false
+    url: ${PROD_DATASOURCE_URL:jdbc:mysql://localhost:3306/collabsme?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${PROD_DATASOURCE_USERNAME:root}
+    password: ${PROD_DATASOURCE_PASSWORD:}
   jpa:
     hibernate:
       ddl-auto: update
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.MySQLDialect
         format_sql: false
     show-sql: false
 

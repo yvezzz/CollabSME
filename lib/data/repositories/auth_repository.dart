@@ -16,10 +16,13 @@ class AuthRepository {
 
       if (response.statusCode == 200) {
         final json = jsonDecode(response.body);
+        final tokens = json['tokens'] as Map<String, dynamic>?;
 
-        await ApiClient.saveToken(json['access']);
-        if (json['refresh'] != null) {
-          await ApiClient.saveRefreshToken(json['refresh']);
+        if (tokens != null) {
+          final access = tokens['access'] as String?;
+          if (access != null) await ApiClient.saveToken(access);
+          final refresh = tokens['refresh'] as String?;
+          if (refresh != null) await ApiClient.saveRefreshToken(refresh);
         }
 
         return await getMe();
@@ -100,7 +103,7 @@ class AuthRepository {
             errors = Map<String, dynamic>.from(errorData);
 
             // Try to find a human readable message
-            if (errors.containsKey('non_field_errors')) {
+            if (errors.containsKey('non_field_errors') && errors['non_field_errors'] is List) {
               message = (errors['non_field_errors'] as List).join(" ");
             } else if (errors.isNotEmpty) {
               final firstError = errors.entries.first;
@@ -137,7 +140,6 @@ class AuthRepository {
     String? firstName,
     String? lastName,
     String? phoneNumber,
-    String? avatarUrl,
     String? bio,
     Map<String, dynamic>? preferences,
   }) async {
@@ -145,7 +147,6 @@ class AuthRepository {
     if (firstName != null) body['first_name'] = firstName;
     if (lastName != null) body['last_name'] = lastName;
     if (phoneNumber != null) body['phone_number'] = phoneNumber;
-    if (avatarUrl != null) body['avatar_url'] = avatarUrl;
     if (bio != null) body['bio'] = bio;
     if (preferences != null) body['preferences'] = preferences;
     final response = await ApiClient.patch('auth/me/', body);

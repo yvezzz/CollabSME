@@ -1,5 +1,6 @@
 package com.collabsme.auth.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.collabsme.user.User;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -14,7 +15,6 @@ public class UserDto {
     private Long companyId;
     private String role;
     private boolean isCompanyAdmin;
-    private String avatarUrl;
     private String bio;
     private String preferences;
 
@@ -29,7 +29,6 @@ public class UserDto {
         dto.setCompanyId(user.getCompany() != null ? user.getCompany().getId() : null);
         dto.setRole(user.getRole() != null ? user.getRole().name() : "MEMBER");
         dto.setCompanyAdmin(user.isCompanyAdmin());
-        dto.setAvatarUrl(user.getAvatarUrl());
         dto.setBio(user.getBio());
         dto.setPreferences(user.getPreferences());
         return dto;
@@ -51,14 +50,14 @@ public class UserDto {
     public void setFullName(String fullName) { this.fullName = fullName; }
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    @JsonProperty("company")
     public Long getCompanyId() { return companyId; }
     public void setCompanyId(Long companyId) { this.companyId = companyId; }
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+    @JsonProperty("is_company_admin")
     public boolean isCompanyAdmin() { return isCompanyAdmin; }
     public void setCompanyAdmin(boolean companyAdmin) { isCompanyAdmin = companyAdmin; }
-    public String getAvatarUrl() { return avatarUrl; }
-    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
     public String getPreferences() { return preferences; }

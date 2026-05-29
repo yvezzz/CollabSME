@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../data/repositories/task_repository.dart';
+import '../../../core/network/api_client.dart';
 import '../../widgets/glass_container.dart';
 
 class ProjectActivityChart extends StatefulWidget {
@@ -13,7 +15,6 @@ class ProjectActivityChart extends StatefulWidget {
 }
 
 class _ProjectActivityChartState extends State<ProjectActivityChart> {
-  final TaskRepository _repository = TaskRepository();
   List<Map<String, dynamic>> _data = [];
   bool _isLoading = true;
 
@@ -25,10 +26,35 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
 
   Future<void> _loadData() async {
     try {
-      final stats = await _repository.getActivityStats();
+      final resp = await ApiClient.get('tasks/activity/');
       if (!mounted) return;
+      if (resp.statusCode != 200) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      final List entries = jsonDecode(resp.body);
+      final now = DateTime.now();
+      final days = List.generate(7, (i) => DateFormat('d/M').format(now.subtract(Duration(days: 6 - i))));
+      final dateStrs = List.generate(7, (i) => DateFormat('yyyy-MM-dd').format(now.subtract(Duration(days: 6 - i))));
+      final counts = <int>[0, 0, 0, 0, 0, 0, 0];
+      for (final e in entries) {
+        final type = e['action_type'] as String?;
+        final desc = e['target_description'] as String? ?? '';
+        final ts = e['timestamp'] as String?;
+        if (ts == null) continue;
+        if (type == 'TASK_COMPLETED') { /* ok */ }
+        else if (type == 'TASK_UPDATED' && (desc.contains(': DONE') || desc.contains('à DONE') || desc.contains(':COMPLETED'))) { /* ok */ }
+        else continue;
+        final day = ts.substring(0, 10);
+        final idx = dateStrs.indexOf(day);
+        if (idx >= 0) counts[idx]++;
+      }
+      final data = <Map<String, dynamic>>[];
+      for (int i = 0; i < 7; i++) {
+        data.add({'day': days[i], 'count': counts[i]});
+      }
       setState(() {
-        _data = stats;
+        _data = data;
         _isLoading = false;
       });
     } catch (e) {
@@ -75,7 +101,7 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    "Total: ${_data.fold<int>(0, (sum, item) => sum + (item['count'] as int))}",
+                    "Total: ${_data.fold<int>(0, (sum, item) => sum + ((item['count'] ?? 0) as int))}",
                     style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -111,8 +137,9 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
                             interval: 1,
                             getTitlesWidget: (value, meta) {
                               if (value >= 0 && value < _data.length) {
+                                final day = _data[value.toInt()]['day']?.toString() ?? '';
                                 return Text(
-                                  _data[value.toInt()]['day'],
+                                  day,
                                   style: const TextStyle(color: Colors.white38, fontSize: 10),
                                 );
                               }
@@ -165,7 +192,8 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
     if (_data.isEmpty) return 10;
     int max = 0;
     for (var item in _data) {
-      if (item['count'] > max) max = item['count'];
+      final count = item['count'];
+      if (count != null && count > max) max = count;
     }
     return (max + 2).toDouble();
   }
@@ -173,7 +201,8 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
   List<FlSpot> _getSpots() {
     List<FlSpot> spots = [];
     for (int i = 0; i < _data.length; i++) {
-      spots.add(FlSpot(i.toDouble(), (_data[i]['count'] as int).toDouble()));
+      final count = _data[i]['count'] ?? 0;
+      spots.add(FlSpot(i.toDouble(), (count as int).toDouble()));
     }
     return spots;
   }

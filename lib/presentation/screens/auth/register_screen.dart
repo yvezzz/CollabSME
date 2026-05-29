@@ -3,11 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/network/route_helper.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/network/route_helper.dart';
 import '../../../core/exceptions/api_exception.dart';
 import '../home/home_screen.dart';
 import '../../widgets/app_text_field.dart';
@@ -27,9 +27,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _emailController = TextEditingController();
   final _companyController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
   
   bool _isLoading = false;
+  bool _acceptTerms = false;
   
   // Field-specific error messages
   String? _firstNameError;
@@ -55,6 +57,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final email = _emailController.text.trim().toLowerCase();
+    if (_passwordController.text != _confirmPasswordController.text) {
+      setState(() => _passwordError = "Les mots de passe ne correspondent pas");
+      return;
+    }
+    if (!_acceptTerms) {
+      AppToast.show(context, message: "Vous devez accepter les conditions générales", type: ToastType.error);
+      return;
+    }
     final password = _passwordController.text;
     final firstName = _firstNameController.text.trim();
     final lastName = _lastNameController.text.trim();
@@ -140,6 +150,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _emailController.dispose();
     _companyController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -332,6 +343,52 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 return null;
                               },
                           ),
+                          const SizedBox(height: 16),
+                          AppTextField(
+                            controller: _confirmPasswordController,
+                            label: "Confirmer le mot de passe",
+                            icon: LucideIcons.lock,
+                            obscure: true,
+                            isPassword: true,
+                            validator: (v) {
+                              if (v == null || v.isEmpty) return "Veuillez confirmer le mot de passe";
+                              if (v != _passwordController.text) return "Les mots de passe ne correspondent pas";
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          Row(
+                            children: [
+                              SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: Checkbox(
+                                  value: _acceptTerms,
+                                  onChanged: (v) => setState(() => _acceptTerms = v ?? false),
+                                  activeColor: AppColors.primary,
+                                  checkColor: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _acceptTerms = !_acceptTerms),
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                                      children: [
+                                        const TextSpan(text: "J'accepte les "),
+                                        TextSpan(
+                                          text: "conditions générales d'utilisation",
+                                          style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                           const SizedBox(height: 32),
                           ElevatedButton(
                             onPressed: _isLoading ? null : _handleRegister,
@@ -356,7 +413,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   children: [
                     const Text("Déjà un compte ? ", style: TextStyle(color: AppColors.textSecondary)),
                     TextButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).pushNamed(Routes.login),
                       child: const Text("Se connecter", style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
                     ),
                   ],

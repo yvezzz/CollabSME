@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class ProjectModel {
   final String id;
   final String? key;
@@ -34,6 +36,24 @@ class ProjectModel {
   });
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
+    List<String> parseTags(dynamic t) {
+      if (t is List) return List<String>.from(t);
+      if (t is String && t.isNotEmpty) {
+        final parsed = jsonDecode(t);
+        if (parsed is List) return List<String>.from(parsed);
+      }
+      return [];
+    }
+
+    Map<String, dynamic> parseCustomFields(dynamic cf) {
+      if (cf is Map) return Map<String, dynamic>.from(cf);
+      if (cf is String && cf.isNotEmpty) {
+        final parsed = jsonDecode(cf);
+        if (parsed is Map) return Map<String, dynamic>.from(parsed);
+      }
+      return {};
+    }
+
     return ProjectModel(
       id: json['id']?.toString() ?? (throw FormatException('Missing project id')),
       key: json['key'],
@@ -45,8 +65,8 @@ class ProjectModel {
       memberCount: json['member_count'] ?? 0,
       budget: json['budget'] != null ? double.tryParse(json['budget'].toString()) : null,
       actualCost: double.tryParse(json['actual_cost']?.toString() ?? '0') ?? 0.0,
-      tags: List<String>.from(json['tags'] ?? []),
-      customFields: json['custom_fields'] ?? {},
+      tags: parseTags(json['tags']),
+      customFields: parseCustomFields(json['custom_fields']),
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
       endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,

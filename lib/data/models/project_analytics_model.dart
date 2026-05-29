@@ -22,8 +22,9 @@ class ProjectAnalyticsModel {
     }
 
     var memberTasks = <MemberTaskCount>[];
-    if (json['tasks_per_member'] != null) {
-      memberTasks = (json['tasks_per_member'] as List)
+    final tpm = json['tasks_per_member'];
+    if (tpm is List) {
+      memberTasks = tpm
           .map((item) => MemberTaskCount.fromJson(item))
           .toList();
     }

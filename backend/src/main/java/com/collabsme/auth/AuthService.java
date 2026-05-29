@@ -12,11 +12,13 @@ import com.collabsme.user.UserRepository;
 import io.jsonwebtoken.Claims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Service
@@ -29,15 +31,21 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final BrevoEmailService brevoEmailService;
+    private final PasswordResetTokenRepository tokenRepository;
+
+    @Value("${app.base-url}")
+    private String appBaseUrl;
 
     public AuthService(UserRepository userRepository, CompanyRepository companyRepository,
                        PasswordEncoder passwordEncoder, JwtTokenProvider jwtTokenProvider,
-                       BrevoEmailService brevoEmailService) {
+                       BrevoEmailService brevoEmailService,
+                       PasswordResetTokenRepository tokenRepository) {
         this.userRepository = userRepository;
         this.companyRepository = companyRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtTokenProvider = jwtTokenProvider;
         this.brevoEmailService = brevoEmailService;
+        this.tokenRepository = tokenRepository;
     }
 
     public AuthResponse login(String email, String password) {
@@ -75,22 +83,36 @@ public class AuthService {
 
     @Transactional
     public void requestPasswordReset(String email) {
-        try {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-            String token = UUID.randomUUID().toString();
-            // In production, store token in DB with expiry
-            // For now, we embed in email (simplified)
-            sendResetEmail(email, token);
-        } catch (Exception e) {
-            log.warn("Password reset requested for unknown email: {}", email);
-        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = new PasswordResetToken(
+                token, user, LocalDateTime.now().plusHours(24));
+        tokenRepository.save(resetToken);
+        sendResetEmail(email, token);
+        log.info("Password reset token generated for email: {}", email);
     }
 
     @Transactional
     public void confirmPasswordReset(String email, String token, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("Lien invalide ou expiré."));
+        PasswordResetToken resetToken = tokenRepository
+                .findByTokenAndUsedFalseAndExpiryDateAfter(token, LocalDateTime.now())
+                .orElseThrow(() -> new IllegalArgumentException("Token invalide ou expiré."));
+        if (!resetToken.getUser().getEmail().equals(email)) {
+            throw new IllegalArgumentException("Email ne correspond pas au token.");
+        }
+        User user = resetToken.getUser();
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        resetToken.setUsed(true);
+        tokenRepository.save(resetToken);
+    }
+
+    @Transactional
+    public void changePassword(User user, String currentPassword, String newPassword) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("Mot de passe actuel incorrect.");
+        }
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -115,6 +137,10 @@ public class AuthService {
         return buildAuthResponse(user);
     }
 
+    public String encodePassword(String rawPassword) {
+        return passwordEncoder.encode(rawPassword);
+    }
+
     public AuthResponse buildAuthResponse(User user) {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId(), user.getEmail());
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId());
@@ -125,12 +151,15 @@ public class AuthService {
     }
 
     private void sendResetEmail(String email, String token) {
+        String resetUrl = appBaseUrl + "/reset-password?token=" + token + "&email=" + email;
         String html = "<h2>Réinitialisation de mot de passe</h2>"
-                + "<p>Utilisez ce token pour réinitialiser votre mot de passe :</p>"
-                + "<p><strong>" + token + "</strong></p>"
-                + "<p><a href=\"https://koda.app/reset-password?token=" + token + "\">Réinitialiser</a></p>";
+                + "<p>Cliquez sur le lien ci-dessous pour réinitialiser votre mot de passe :</p>"
+                + "<p><a href=\"" + resetUrl + "\">Réinitialiser mon mot de passe</a></p>"
+                + "<p>Ce lien expire dans 1 heure.</p>"
+                + "<p><small>Token: " + token + "</small></p>";
         String text = "Réinitialisation de votre mot de passe\n\n"
-                + "Token: " + token;
+                + "Cliquez sur ce lien : " + resetUrl + "\n\n"
+                + "Ce lien expire dans 1 heure.";
         brevoEmailService.sendEmail(email, "Réinitialisation de votre mot de passe", html, text);
     }
 }

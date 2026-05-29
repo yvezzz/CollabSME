@@ -94,6 +94,12 @@ public class TaskService {
         task.setStatus(TaskStatus.valueOf(newStatus));
         task = taskRepository.save(task);
 
+        if (newStatus.equals("DONE")) {
+            logActivity(project.getCompany(), user, "TASK_COMPLETED",
+                    "Tâche \"" + task.getTitle() + "\" complétée",
+                    "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\"}");
+        }
+
         Set<Long> notified = new HashSet<>();
         if (task.getAssignedTo() != null && !task.getAssignedTo().getId().equals(user.getId())) {
             notificationService.send(task.getAssignedTo(), "Tâche mise à jour",
@@ -108,7 +114,7 @@ public class TaskService {
                     "TASK_UPDATED", task.getId().toString());
         }
 
-        logActivity(project.getCompany(), task.getCreatedBy() != null ? task.getCreatedBy() : null,
+        logActivity(project.getCompany(), user,
                 "TASK_UPDATED",
                 "Tâche \"" + task.getTitle() + "\" : " + newStatus,
                 "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\",\"status\":\"" + newStatus + "\"}");
@@ -116,12 +122,22 @@ public class TaskService {
     }
 
     @Transactional
-    public Task reorderTask(Project project, String taskIdStr, String newStatus, int newOrder) {
+    public Task reorderTask(Project project, String taskIdStr, String newStatus, int newOrder, User user) {
         Long taskId = Long.parseLong(taskIdStr);
         Task task = getTask(project, taskId);
         task.setStatus(TaskStatus.valueOf(newStatus));
         task.setOrder(newOrder);
-        return taskRepository.save(task);
+        task = taskRepository.save(task);
+
+        logActivity(project.getCompany(), user, "TASK_UPDATED",
+                "Tâche \"" + task.getTitle() + "\" : " + newStatus,
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\",\"status\":\"" + newStatus + "\"}");
+        if (newStatus.equals("DONE")) {
+            logActivity(project.getCompany(), user, "TASK_COMPLETED",
+                    "Tâche \"" + task.getTitle() + "\" complétée",
+                    "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\"}");
+        }
+        return task;
     }
 
     public Page<Task> getMyTasks(User user, int page, int size) {
@@ -152,6 +168,9 @@ public class TaskService {
                     "COMMENT_ADDED", task.getId().toString());
         }
 
+        logActivity(user.getCompany(), user, "COMMENT_ADDED",
+                "Commentaire ajouté à la tâche \"" + task.getTitle() + "\"",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\"}");
         return saved;
     }
 
@@ -169,6 +188,9 @@ public class TaskService {
                     "CHECKLIST_ADDED", task.getId().toString());
         }
 
+        logActivity(user.getCompany(), user, "CHECKLIST_ADDED",
+                "Sous-tâche \"" + title + "\" ajoutée à \"" + task.getTitle() + "\"",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\"}");
         return saved;
     }
 
@@ -189,6 +211,9 @@ public class TaskService {
                     "CHECKLIST_COMPLETED", task.getId().toString());
         }
 
+        logActivity(user.getCompany(), user, "CHECKLIST_UPDATED",
+                "Sous-tâche \"" + saved.getTitle() + "\" " + (isCompleted ? "terminée" : "mise à jour") + " dans \"" + task.getTitle() + "\"",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\",\"item_id\":\"" + saved.getId() + "\"}");
         return saved;
     }
 
@@ -223,6 +248,9 @@ public class TaskService {
                     "ATTACHMENT_ADDED", task.getId().toString());
         }
 
+        logActivity(user.getCompany(), user, "ATTACHMENT_ADDED",
+                "Fichier \"" + file.getOriginalFilename() + "\" ajouté à \"" + task.getTitle() + "\"",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\"}");
         return saved;
     }
 
@@ -234,7 +262,6 @@ public class TaskService {
                     map.put("id", a.getId());
                     map.put("actor_name", a.getActor() != null ?
                             a.getActor().getFirstName() + " " + a.getActor().getLastName() : "Système");
-                    map.put("actor_avatar", a.getActor() != null ? a.getActor().getAvatarUrl() : null);
                     map.put("action_type", a.getActionType());
                     map.put("target_description", a.getTargetDescription());
                     map.put("timestamp", a.getTimestamp());

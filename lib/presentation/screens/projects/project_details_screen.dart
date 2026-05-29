@@ -12,12 +12,9 @@ import 'package:collabsme/presentation/providers/project_provider.dart';
 import 'package:collabsme/data/models/project_model.dart';
 import 'package:collabsme/data/repositories/ai_repository.dart';
 import 'package:collabsme/presentation/widgets/app_toast.dart';
-import 'package:collabsme/presentation/screens/activity/activity_log_screen.dart';
-import 'package:collabsme/presentation/screens/tasks/task_board_screen.dart';
-import 'package:collabsme/presentation/widgets/task_create_dialog.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/status_badge.dart';
 import 'project_edit_dialog.dart';
-import 'project_members_screen.dart';
 
 /// Vue détaillée d'un projet incluant le tableau Kanban et l'assistant IA.
 class ProjectDetailsScreen extends ConsumerStatefulWidget {
@@ -110,15 +107,24 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     final projectAsync = ref.watch(singleProjectProvider(widget.projectId));
     final tasksAsync = ref.watch(taskListProvider(widget.projectId));
     final user = ref.watch(authStateProvider).value;
+    final projectStatus = projectAsync.valueOrNull?.status;
+    final isLocked = projectStatus == 'COMPLETED' || projectStatus == 'ARCHIVED';
     final canCreate =
-        user != null && (user.isCompanyAdmin || user.role != 'MEMBER');
+        user != null && !isLocked && (user.isCompanyAdmin || user.role != 'MEMBER');
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
 
     return projectAsync.when(
       data: (project) => Scaffold(
         drawer: isMobile
-            ? Drawer(child: _buildProjectSidebar(context, isDrawer: true))
+            ? Drawer(child: _buildProjectSidebar(context, canCreate: canCreate, isDrawer: true))
+            : null,
+        floatingActionButton: isMobile && canCreate
+            ? FloatingActionButton(
+                onPressed: _handleAddTask,
+                backgroundColor: AppColors.primary,
+                child: const Icon(LucideIcons.plus, color: Colors.white),
+              )
             : null,
         appBar: isMobile
             ? AppBar(
@@ -131,13 +137,20 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                   ),
                 ),
                 actions: [
-                  _buildStatusChip(project),
+                  if (canCreate)
+                    IconButton(
+                      icon: const Icon(LucideIcons.plus, size: 20),
+                      tooltip: "Ajouter une tâche",
+                      onPressed: _handleAddTask,
+                    ),
+                  StatusBadge(status: project.status),
                   const SizedBox(width: 4),
-                  IconButton(
-                    icon: const Icon(LucideIcons.pencil),
-                    tooltip: "Modifier",
-                    onPressed: () => _showEditDialog(),
-                  ),
+                  if (canCreate)
+                    IconButton(
+                      icon: const Icon(LucideIcons.pencil),
+                      tooltip: "Modifier",
+                      onPressed: () => _showEditDialog(),
+                    ),
                   IconButton(
                     icon: const Icon(LucideIcons.users),
                     tooltip: "Membres",
@@ -159,7 +172,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
             : null,
         body: Row(
           children: [
-            if (!isMobile) _buildProjectSidebar(context),
+                    if (!isMobile) _buildProjectSidebar(context, canCreate: canCreate),
             Expanded(
               child: Column(
                 children: [
@@ -217,7 +230,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     );
   }
 
-  Widget _buildProjectSidebar(BuildContext context, {bool isDrawer = false}) {
+  Widget _buildProjectSidebar(BuildContext context, {bool canCreate = false, bool isDrawer = false}) {
     return Container(
       width: isDrawer ? null : 80,
       color: AppColors.surface,
@@ -240,7 +253,8 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
             onTap: () => Navigator.of(context).pushNamed('${Routes.taskBoard}/${widget.projectId}'),
           ),
           _iconItem(LucideIcons.users, "Membres", onTap: _navigateToMembers),
-          _iconItem(LucideIcons.settings, "Modifier", onTap: _showEditDialog),
+          if (canCreate)
+            _iconItem(LucideIcons.settings, "Modifier", onTap: _showEditDialog),
           _spacerItem(),
           _iconItem(
             LucideIcons.activity,
@@ -374,7 +388,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          "Budget: ${spent.toInt()} / ${project.budget!.toInt()} €",
+          "Budget: ${spent.toInt()} / ${project.budget!.toInt()} FCFA",
           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 4),
@@ -396,9 +410,8 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   }
 
   Future<void> _handleAddTask() async {
-    final result = await showDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (_) => const TaskCreateDialog(columnStatus: 'TODO'),
+    final result = await Navigator.of(context).pushNamed<Map<String, dynamic>>(
+      '${Routes.taskCreate}/${widget.projectId}',
     );
     if (result != null && mounted) {
       try {
@@ -437,43 +450,23 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     });
   }
 
-  Widget _buildStatusChip(ProjectModel project) {
-    final colors = switch (project.status) {
-      'DRAFT' => (AppColors.textSecondary, 0.1),
-      'ACTIVE' => (AppColors.accent, 0.15),
-      'COMPLETED' => (AppColors.primary, 0.15),
-      'ARCHIVED' => (AppColors.danger, 0.1),
-      _ => (AppColors.textSecondary, 0.1),
-    };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: colors.$1.withValues(alpha: colors.$2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        project.status,
-        style: TextStyle(
-          fontSize: 10,
-          color: colors.$1,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-
   List<PopupMenuEntry<String>> _buildActionMenuItems(ProjectModel project) {
+    final user = ref.read(authStateProvider).value;
+    final isAdmin = user?.isCompanyAdmin ?? false;
+    final isLead = isAdmin || user?.role == 'LEAD';
     final items = <PopupMenuEntry<String>>[];
-    items.add(
-      const PopupMenuItem(
-        value: 'edit',
-        child: ListTile(
-          leading: Icon(LucideIcons.pencil, size: 18),
-          title: Text("Modifier"),
-          dense: true,
+    if (isLead) {
+      items.add(
+        const PopupMenuItem(
+          value: 'edit',
+          child: ListTile(
+            leading: Icon(LucideIcons.pencil, size: 18),
+            title: Text("Modifier"),
+            dense: true,
+          ),
         ),
-      ),
-    );
+      );
+    }
     items.add(
       const PopupMenuItem(
         value: 'members',
@@ -484,8 +477,8 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         ),
       ),
     );
-    items.add(const PopupMenuDivider());
-    if (project.status == 'DRAFT') {
+    if (isLead) items.add(const PopupMenuDivider());
+    if (isLead && project.status == 'DRAFT') {
       items.add(
         const PopupMenuItem(
           value: 'activate',
@@ -497,7 +490,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         ),
       );
     }
-    if (project.status == 'ACTIVE') {
+    if (isLead && project.status == 'ACTIVE') {
       items.add(
         const PopupMenuItem(
           value: 'validate',
@@ -513,7 +506,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         ),
       );
     }
-    if (project.status != 'ARCHIVED') {
+    if (isLead && project.status != 'ARCHIVED') {
       items.add(
         const PopupMenuItem(
           value: 'archive',
@@ -529,7 +522,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
         ),
       );
     }
-    if (project.status == 'ARCHIVED') {
+    if (isAdmin) {
       items.add(
         const PopupMenuItem(
           value: 'delete',

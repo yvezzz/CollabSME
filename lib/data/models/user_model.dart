@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 class UserModel {
   final String id;
   final String email;
@@ -7,7 +9,6 @@ class UserModel {
   final String? companyId;
   final String? role;
   final bool isCompanyAdmin;
-  final String? avatarUrl;
   final String? bio;
 
   final Map<String, dynamic>? preferences;
@@ -21,7 +22,6 @@ class UserModel {
     this.companyId,
     this.role,
     this.isCompanyAdmin = false,
-    this.avatarUrl,
     this.bio,
     this.preferences,
   });
@@ -50,9 +50,10 @@ class UserModel {
       companyId: json['company']?.toString(),
       role: json['role'] ?? 'MEMBER',
       isCompanyAdmin: json['is_company_admin'] == true,
-      avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
-      preferences: json['preferences'] as Map<String, dynamic>?,
+      preferences: json['preferences'] is String
+          ? Map<String, dynamic>.from(jsonDecode(json['preferences'] as String))
+          : json['preferences'] as Map<String, dynamic>?,
     );
   }
 
@@ -66,7 +67,6 @@ class UserModel {
       'company': companyId,
       'role': role,
       'is_company_admin': isCompanyAdmin,
-      'avatar_url': avatarUrl,
       'bio': bio,
       'preferences': preferences,
     };

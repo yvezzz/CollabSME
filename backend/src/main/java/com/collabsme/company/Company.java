@@ -17,6 +17,8 @@ public class Company {
     private String size;
     private String website;
     private String billingEmail;
+    private String phone;
+    private String nif;
     private String address;
     private String city;
     private String postalCode;
@@ -52,6 +54,10 @@ public class Company {
     public void setWebsite(String website) { this.website = website; }
     public String getBillingEmail() { return billingEmail; }
     public void setBillingEmail(String billingEmail) { this.billingEmail = billingEmail; }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+    public String getNif() { return nif; }
+    public void setNif(String nif) { this.nif = nif; }
     public String getAddress() { return address; }
     public void setAddress(String address) { this.address = address; }
     public String getCity() { return city; }

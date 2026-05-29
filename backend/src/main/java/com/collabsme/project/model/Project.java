@@ -4,7 +4,6 @@ import com.collabsme.company.Company;
 import com.collabsme.user.User;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -35,9 +34,6 @@ public class Project {
 
     @Enumerated(EnumType.STRING)
     private Priority priority = Priority.MEDIUM;
-
-    private BigDecimal budget;
-    private BigDecimal actualCost = BigDecimal.ZERO;
 
     @Column(columnDefinition = "TEXT")
     private String tags = "[]";
@@ -80,10 +76,6 @@ public class Project {
     public void setStatus(ProjectStatus status) { this.status = status; }
     public Priority getPriority() { return priority; }
     public void setPriority(Priority priority) { this.priority = priority; }
-    public BigDecimal getBudget() { return budget; }
-    public void setBudget(BigDecimal budget) { this.budget = budget; }
-    public BigDecimal getActualCost() { return actualCost; }
-    public void setActualCost(BigDecimal actualCost) { this.actualCost = actualCost; }
     public String getTags() { return tags; }
     public void setTags(String tags) { this.tags = tags; }
     public String getCustomFields() { return customFields; }

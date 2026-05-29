@@ -9,11 +9,9 @@ import '../../providers/project_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/notification_provider.dart';
 import '../../../widgets/glass_container.dart';
-import '../projects/project_details_screen.dart';
+import '../../widgets/status_badge.dart';
 import 'notifications_screen.dart';
 import 'settings_screen.dart';
-import '../../../presentation/widgets/app_toast.dart';
-import '../auth/login_screen.dart';
 import './my_tasks_screen.dart';
 import './team_screen.dart';
 import './calendar_screen.dart';
@@ -21,11 +19,11 @@ import '../../../data/models/project_model.dart';
 import '../../../data/models/user_model.dart';
 import '../../../data/models/dashboard_stats.dart';
 import '../../widgets/project_activity_chart.dart';
-import './ai_assistant_screen.dart';
+import '../../widgets/app_toast.dart';
+import '../projects/project_edit_dialog.dart';
 import 'reports_screen.dart';
 import 'company_settings_screen.dart';
 import 'global_search_delegate.dart';
-import '../../widgets/app_text_field.dart';
 
 /// Tableau de bord principal de l'application.
 /// Affiche la barre latérale, les statistiques et les projets actifs.
@@ -84,7 +82,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final pages = visibleIndices.map((i) => allPages[i]).toList();
     final visualIndex = visibleIndices.indexOf(_selectedIndex);
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.surface,
+            title: const Text("Quitter l'application ?"),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Annuler")),
+              ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Quitter")),
+            ],
+          ),
+        );
+        if (shouldExit == true && context.mounted) {
+          Navigator.of(context).pop();
+        }
+      },
+      child: Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAIAssistant(),
         label: const Text("Assistant IA"),
@@ -123,6 +140,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               }).toList(),
             )
           : null,
+      ),
     );
   }
 
@@ -169,7 +187,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       if (user != null &&
                           (user.isCompanyAdmin || user.role != 'MEMBER'))
                         ElevatedButton.icon(
-                          onPressed: () => _showNewProjectDialog(),
+                          onPressed: () => Navigator.pushNamed(context, '/projects/create'),
                           icon: const Icon(LucideIcons.plus, size: 18),
                           label: const Text("Nouveau Projet"),
                           style: ElevatedButton.styleFrom(
@@ -378,205 +396,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showNewProjectDialog() {
-    final titleController = TextEditingController();
-    final descController = TextEditingController();
-    final keyController = TextEditingController();
-    final budgetController = TextEditingController();
-    String priority = 'MEDIUM';
-    final formKey = GlobalKey<FormState>();
-    bool isSubmitting = false;
-
-    showDialog(
-      context: context,
-      builder: (context) => Dialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 600),
-          padding: const EdgeInsets.all(32),
-          child: StatefulBuilder(
-            builder: (context, setDialogState) => SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Nouveau Projet",
-                    style: GoogleFonts.outfit(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 24,
-                    ),
-                  ),
-                  const Text(
-                    "Lancez une nouvelle collaboration",
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        AppTextField(
-                          controller: titleController,
-                          label: "Titre du projet",
-                          icon: LucideIcons.briefcase,
-                          validator: (v) =>
-                              (v == null || v.isEmpty) ? "Titre requis" : null,
-                        ),
-                        const SizedBox(height: 16),
-                        Column(
-                          children: [
-                            AppTextField(
-                              controller: keyController,
-                              label: "Clé (ex: PROJ)",
-                              icon: LucideIcons.key,
-                            ),
-                            const SizedBox(height: 12),
-                            DropdownButtonFormField<String>(
-                              initialValue: priority,
-                              dropdownColor: AppColors.surface,
-                              decoration: InputDecoration(
-                                labelText: "Priorité",
-                                prefixIcon: const Icon(
-                                  LucideIcons.alertTriangle,
-                                  size: 20,
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 16,
-                                ),
-                              ),
-                              items: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
-                                  .map(
-                                     (p) => DropdownMenuItem(
-                                       value: p,
-                                       child: Text(
-                                        p,
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (v) =>
-                                  setDialogState(() => priority = v!),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: budgetController,
-                          label: "Budget initial (€)",
-                          icon: LucideIcons.dollarSign,
-                          keyboardType: TextInputType.number,
-                        ),
-                        const SizedBox(height: 16),
-                        AppTextField(
-                          controller: descController,
-                          label: "Description du projet",
-                          icon: LucideIcons.fileText,
-                          maxLines: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text(
-                          "Annuler",
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      ElevatedButton(
-                        onPressed: isSubmitting
-                            ? null
-                            : () async {
-                                if (!formKey.currentState!.validate()) return;
-                                setDialogState(() => isSubmitting = true);
-                                try {
-                                  await ref
-                                      .read(projectListProvider.notifier)
-                                      .addProject(
-                                        title: titleController.text.trim(),
-                                        description: descController.text.trim(),
-                                        key: keyController.text
-                                            .trim()
-                                            .toUpperCase(),
-                                        priority: priority,
-                                        budget: double.tryParse(
-                                          budgetController.text,
-                                        ),
-                                      );
-                                  if (context.mounted) {
-                                    Navigator.pop(context);
-                                    AppToast.show(
-                                      context,
-                                      message: "Projet créé avec succès !",
-                                      type: ToastType.success,
-                                    );
-                                  }
-                                } catch (e) {
-                                  if (context.mounted) {
-                                    AppToast.show(
-                                      context,
-                                      message: "Erreur : $e",
-                                      type: ToastType.error,
-                                    );
-                                  }
-                                } finally {
-                                  if (context.mounted) {
-                                    setDialogState(() => isSubmitting = false);
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: isSubmitting
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Text("Créer le projet"),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildAppBar(UserModel? user) {
     return SliverAppBar(
       backgroundColor: AppColors.background.withValues(alpha: 0.8),
@@ -726,6 +545,170 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _handleProjectAction(BuildContext context, ProjectModel project) {
+    final user = ref.read(authStateProvider).value;
+    final isAdmin = user?.isCompanyAdmin ?? false;
+    final isLead = isAdmin || user?.role == 'LEAD';
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.pencil, color: Colors.white),
+              title: const Text("Modifier"),
+              onTap: () { Navigator.pop(ctx); _showEditDialog(project.id); },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.users, color: Colors.white),
+              title: const Text("Membres"),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.of(context).pushNamed(
+                  '${Routes.projectMembers}/${project.id}',
+                );
+              },
+            ),
+            if (isLead && project.status == 'DRAFT')
+              ListTile(
+                leading: const Icon(LucideIcons.play, color: AppColors.accent),
+                title: const Text("Activer"),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmProjectAction(context, project.id, 'activate',
+                    "Activer le projet ?", "Le projet passera en statut ACTIF.");
+                },
+              ),
+            if (isLead && project.status == 'ACTIVE')
+              ListTile(
+                leading: const Icon(LucideIcons.checkCircle, color: AppColors.primary),
+                title: const Text("Valider"),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmProjectAction(context, project.id, 'validate',
+                    "Valider le projet ?", "Le projet sera marqué comme terminé.");
+                },
+              ),
+            if (isLead && project.status != 'ARCHIVED')
+              ListTile(
+                leading: const Icon(LucideIcons.archive, color: AppColors.warning),
+                title: const Text("Archiver"),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmProjectAction(context, project.id, 'archive',
+                    "Archiver le projet ?", "Le projet sera archivé.");
+                },
+              ),
+            if (isAdmin)
+              ListTile(
+                leading: const Icon(LucideIcons.trash2, color: AppColors.danger),
+                title: const Text("Supprimer", style: TextStyle(color: AppColors.danger)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _confirmDeleteProject(context, project.id);
+                },
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditDialog(String projectId) {
+    final projectAsync = ref.read(singleProjectProvider(projectId));
+    projectAsync.whenData((project) {
+      showDialog(
+        context: context,
+        builder: (_) => ProjectEditDialog(project: project),
+      );
+    });
+  }
+
+  Future<void> _confirmProjectAction(
+    BuildContext context, String projectId, String action,
+    String title, String message,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annuler"),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text("Confirmer"),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await ref.read(singleProjectProvider(projectId).notifier).updateStatus(action);
+        if (context.mounted) {
+          AppToast.show(context, message: "Statut mis à jour", type: ToastType.success);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppToast.show(context, message: "Erreur : $e", type: ToastType.error);
+        }
+      }
+    }
+  }
+
+  Future<void> _confirmDeleteProject(BuildContext context, String projectId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("Supprimer le projet", style: TextStyle(color: AppColors.danger)),
+        content: const Text("Action irréversible. Toutes les tâches et données seront supprimées."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+            child: const Text("Supprimer"),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      try {
+        await ref.read(projectRepositoryProvider).deleteProject(projectId);
+        if (context.mounted) {
+          AppToast.show(context, message: "Projet supprimé", type: ToastType.success);
+          ref.invalidate(projectListProvider);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          AppToast.show(context, message: "Erreur : $e", type: ToastType.error);
+        }
+      }
+    }
+  }
+
   Widget _buildProjectCard(BuildContext context, ProjectModel project) {
     return InkWell(
       onTap: () => Navigator.of(context).pushNamed('${Routes.projectDetails}/${project.id}'),
@@ -738,26 +721,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
+                  StatusBadge(status: project.status),
+                  GestureDetector(
+                    onTap: () => _handleProjectAction(context, project),
+                    child: const Icon(
+                      LucideIcons.moreHorizontal,
+                      color: AppColors.textSecondary,
                     ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      project.status,
-                      style: const TextStyle(
-                        color: AppColors.primary,
-                        fontSize: 10,
-                      ),
-                    ),
-                  ),
-                  const Icon(
-                    LucideIcons.moreHorizontal,
-                    color: AppColors.textSecondary,
                   ),
                 ],
               ),
@@ -854,71 +824,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  void _showLogoutDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AppColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.danger.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                LucideIcons.logOut,
-                color: AppColors.danger,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              "Déconnexion",
-              style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-            ),
-          ],
-        ),
-        content: const Text(
-          "Êtes-vous sûr de vouloir vous déconnecter ?",
-          style: TextStyle(color: Colors.white70),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              "Annuler",
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-          ),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final nav = Navigator.of(context);
-              nav.pop();
-              await ref.read(authStateProvider.notifier).logout();
-              if (mounted) {
-                nav.pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            icon: const Icon(LucideIcons.logOut, size: 16),
-            label: const Text("Se déconnecter"),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.danger,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 /// Délégué pour la recherche de projets

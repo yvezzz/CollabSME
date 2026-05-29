@@ -5,8 +5,11 @@ import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../data/repositories/company_repository.dart';
 import '../../../widgets/glass_container.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_toast.dart';
+import '../../widgets/country_picker_widget.dart';
+import '../../widgets/city_picker_widget.dart';
 
 class CompanySettingsScreen extends ConsumerStatefulWidget {
   const CompanySettingsScreen({super.key});
@@ -21,6 +24,8 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
   final _nameController = TextEditingController();
   final _websiteController = TextEditingController();
   final _billingEmailController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _nifController = TextEditingController();
   final _addressController = TextEditingController();
   final _cityController = TextEditingController();
   final _postalCodeController = TextEditingController();
@@ -28,6 +33,7 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
 
   bool _isLoading = true;
   bool _isSaving = false;
+  bool _isAdmin = false;
   Map<String, dynamic>? _company;
 
   @override
@@ -44,6 +50,8 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         _nameController.text = company['name'] ?? '';
         _websiteController.text = company['website'] ?? '';
         _billingEmailController.text = company['billing_email'] ?? '';
+        _phoneController.text = company['phone'] ?? '';
+        _nifController.text = company['nif'] ?? '';
         _addressController.text = company['address'] ?? '';
         _cityController.text = company['city'] ?? '';
         _postalCodeController.text = company['postal_code'] ?? '';
@@ -66,6 +74,8 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
         'name': _nameController.text.trim(),
         'website': _websiteController.text.trim().isEmpty ? null : _websiteController.text.trim(),
         'billing_email': _billingEmailController.text.trim().isEmpty ? null : _billingEmailController.text.trim(),
+        'phone': _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
+        'nif': _nifController.text.trim().isEmpty ? null : _nifController.text.trim(),
         'address': _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
         'city': _cityController.text.trim().isEmpty ? null : _cityController.text.trim(),
         'postal_code': _postalCodeController.text.trim().isEmpty ? null : _postalCodeController.text.trim(),
@@ -88,6 +98,8 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
     _nameController.dispose();
     _websiteController.dispose();
     _billingEmailController.dispose();
+    _phoneController.dispose();
+    _nifController.dispose();
     _addressController.dispose();
     _cityController.dispose();
     _postalCodeController.dispose();
@@ -97,11 +109,12 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+    final user = authState.valueOrNull;
+    _isAdmin = user?.isCompanyAdmin ?? false;
     final screenSize = MediaQuery.of(context).size;
     final isDesktop = screenSize.width > 900;
     final horizontalPadding = isDesktop ? screenSize.width * 0.15 : 16.0;
-
-    final canPop = Navigator.of(context).canPop();
 
     return Scaffold(
       body: Container(
@@ -161,10 +174,6 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                                             _company?['name'] ?? "Mon Entreprise",
                                             style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
                                           ),
-                                          Text(
-                                            "ID: ${_company?['id'] ?? '-'}",
-                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
-                                          ),
                                         ],
                                       ),
                                     ),
@@ -177,13 +186,15 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                                   controller: _nameController,
                                   label: "Nom de l'entreprise",
                                   icon: LucideIcons.building2,
-                                  validator: (v) => (v == null || v.isEmpty) ? "Nom requis" : null,
+                                  enabled: _isAdmin,
+                                  validator: _isAdmin ? (v) => (v == null || v.isEmpty) ? "Nom requis" : null : null,
                                 ),
                                 const SizedBox(height: 16),
                                 AppTextField(
                                   controller: _websiteController,
                                   label: "Site web",
                                   icon: LucideIcons.globe,
+                                  enabled: _isAdmin,
                                 ),
                                 const SizedBox(height: 32),
                                 _sectionTitle("CONTACT & FACTURATION"),
@@ -192,6 +203,21 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                                   controller: _billingEmailController,
                                   label: "E-mail de facturation",
                                   icon: LucideIcons.mail,
+                                  enabled: _isAdmin,
+                                ),
+                                const SizedBox(height: 16),
+                                AppTextField(
+                                  controller: _phoneController,
+                                  label: "Téléphone",
+                                  icon: LucideIcons.phone,
+                                  enabled: _isAdmin,
+                                ),
+                                const SizedBox(height: 16),
+                                AppTextField(
+                                  controller: _nifController,
+                                  label: "NIF (Numéro d'identification fiscale)",
+                                  icon: LucideIcons.receipt,
+                                  enabled: _isAdmin,
                                 ),
                                 const SizedBox(height: 32),
                                 _sectionTitle("ADRESSE"),
@@ -200,15 +226,21 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                                   controller: _addressController,
                                   label: "Adresse",
                                   icon: LucideIcons.mapPin,
+                                  enabled: _isAdmin,
                                 ),
                                 const SizedBox(height: 16),
                                 Row(
                                   children: [
                                     Expanded(
-                                      child: AppTextField(
-                                        controller: _cityController,
-                                        label: "Ville",
-                                        icon: LucideIcons.map,
+                                      child: CityPickerWidget(
+                                        country: _countryController.text,
+                                        value: _cityController.text,
+                                        onChanged: (v) {
+                                          if (v != null) {
+                                            setState(() => _cityController.text = v);
+                                          }
+                                        },
+                                        enabled: _isAdmin,
                                       ),
                                     ),
                                     const SizedBox(width: 16),
@@ -217,18 +249,23 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
                                         controller: _postalCodeController,
                                         label: "Code postal",
                                         icon: LucideIcons.mail,
+                                        enabled: _isAdmin,
                                       ),
                                     ),
                                   ],
                                 ),
                                 const SizedBox(height: 16),
-                                AppTextField(
-                                  controller: _countryController,
-                                  label: "Pays",
-                                  icon: LucideIcons.flag,
+                                CountryPickerWidget(
+                                  value: _countryController.text,
+                                  onChanged: (v) {
+                                    if (v != null) {
+                                      setState(() => _countryController.text = v);
+                                    }
+                                  },
+                                  enabled: _isAdmin,
                                 ),
                                 const SizedBox(height: 32),
-                                Row(
+                                if (_isAdmin) Row(
                                   children: [
                                     Expanded(
                                       child: ElevatedButton(

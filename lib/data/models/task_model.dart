@@ -1,3 +1,5 @@
+import '../../utils/safe_parser.dart';
+
 class TaskModel {
   final String id;
   final String? publicId;
@@ -50,16 +52,16 @@ class TaskModel {
   factory TaskModel.fromJson(Map<String, dynamic> json) {
     return TaskModel(
       id: json['id']?.toString() ?? '',
-      publicId: json['public_id'],
-      parentTask: json['parent_task'],
+      publicId: json['public_id']?.toString(),
+      parentTask: json['parent_task']?.toString(),
       projectId: json['project']?.toString(),
-      title: json['title'],
+      title: json['title'] ?? '',
       description: json['description'] ?? '',
-      status: json['status'],
-      priority: json['priority'],
-      assignedTo: json['assigned_to'],
-      assignedToName: json['assigned_to_name'],
-      createdAt: DateTime.parse(json['created_at']),
+      status: json['status'] ?? 'TODO',
+      priority: json['priority'] ?? 'MEDIUM',
+      assignedTo: json['assigned_to']?.toString(),
+      assignedToName: json['assigned_to_name']?.toString(),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       dueDate: json['due_date'] != null
           ? DateTime.parse(json['due_date'])
           : null,
@@ -70,19 +72,13 @@ class TaskModel {
           ? double.tryParse(json['estimated_hours'].toString())
           : null,
       actualHours: double.tryParse(json['actual_hours'].toString()) ?? 0.0,
-      tags: List<String>.from(json['tags'] ?? []),
-      customFields: json['custom_fields'] ?? {},
-      checklistItems: (json['checklist_items'] as List? ?? [])
-          .map((s) => SubTaskModel.fromJson(s))
-          .toList(),
-      comments: (json['comments'] as List? ?? [])
-          .map((c) => CommentModel.fromJson(c))
-          .toList(),
-      subTasksCount: json['sub_tasks_count'] ?? 0,
-      commentsCount:
-          json['comments_count'] ??
-          (json['comments'] != null ? (json['comments'] as List).length : 0),
-      attachmentsCount: json['attachments_count'] ?? 0,
+      tags: json['tags'] is List ? List<String>.from(json['tags']) : SafeParser.parseJsonList(json['tags']),
+      customFields: json['custom_fields'] is Map ? json['custom_fields'] : SafeParser.parseJsonMap(json['custom_fields']),
+      checklistItems: SafeParser.parseList<SubTaskModel>(json['checklist_items'], (m) => SubTaskModel.fromJson(m)),
+      comments: SafeParser.parseList<CommentModel>(json['comments'], (m) => CommentModel.fromJson(m)),
+      subTasksCount: SafeParser.parseInt(json['sub_tasks_count']),
+      commentsCount: SafeParser.parseInt(json['comments_count']),
+      attachmentsCount: SafeParser.parseInt(json['attachments_count']),
     );
   }
 
@@ -153,7 +149,7 @@ class SubTaskModel {
   factory SubTaskModel.fromJson(Map<String, dynamic> json) {
     return SubTaskModel(
       id: json['id']?.toString() ?? '',
-      title: json['title'],
+      title: json['title'] ?? '',
       isCompleted: json['is_completed'] ?? false,
       order: json['order'] ?? 0,
     );
@@ -185,11 +181,11 @@ class CommentModel {
     return CommentModel(
       id: json['id']?.toString() ?? '',
       parent: json['parent'],
-      content: json['content'],
+      content: json['content'] ?? '',
       authorName: json['author_name'] ?? 'Inconnu',
       mentions: List<String>.from(json['mentions'] ?? []),
       reactions: json['reactions'] ?? {},
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       replies: (json['replies'] as List? ?? [])
           .map((r) => CommentModel.fromJson(r))
           .toList(),

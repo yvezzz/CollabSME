@@ -26,7 +26,7 @@ class CollabSmeApplicationTests {
 
     @Test
     void test1_loginSuccess() {
-        var login = Map.of("email", "admin@collabsme.com", "password", "admin123");
+        var login = Map.of("email", "admin@collabsme.com", "password", "Admin123");
 
         ResponseEntity<Map> response = restTemplate.postForEntity("/api/auth/login/", login, Map.class);
 
@@ -60,11 +60,11 @@ class CollabSmeApplicationTests {
     @Test
     void test3_register() {
         var register = Map.of(
-                "firstName", "Jane",
-                "lastName", "Doe",
+                "first_name", "Jane",
+                "last_name", "Doe",
                 "email", "jane" + System.currentTimeMillis() + "@example.com",
                 "password", "password123",
-                "companyName", "New Company"
+                "company_name", "New Company"
         );
 
         ResponseEntity<Map> response = restTemplate.postForEntity("/api/auth/register/", register, Map.class);

@@ -45,7 +45,6 @@ public class AuthController {
         if (dto.getLastName() != null) user.setLastName(dto.getLastName());
         if (dto.getPhoneNumber() != null) user.setPhoneNumber(dto.getPhoneNumber());
         if (dto.getBio() != null) user.setBio(dto.getBio());
-        if (dto.getAvatarUrl() != null) user.setAvatarUrl(dto.getAvatarUrl());
         if (dto.getPreferences() != null) user.setPreferences(dto.getPreferences());
         userRepository.save(user);
         return ResponseEntity.ok(UserDto.fromUser(user));
@@ -84,6 +83,19 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> passwordResetConfirm(@Valid @RequestBody PasswordResetConfirm request) {
         authService.confirmPasswordReset(request.getEmail(), request.getToken(), request.getNewPassword());
         return ResponseEntity.ok(Map.of("message", "Mot de passe réinitialisé avec succès."));
+    }
+
+    @PostMapping("/password-change/")
+    public ResponseEntity<Map<String, String>> passwordChange(@AuthenticationPrincipal User user,
+                                                               @RequestBody Map<String, String> body) {
+        String currentPassword = body.get("current_password");
+        String newPassword = body.get("new_password");
+        if (currentPassword == null || newPassword == null || newPassword.length() < 8) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Mot de passe invalide (8 caractères minimum)."));
+        }
+        authService.changePassword(user, currentPassword, newPassword);
+        return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès."));
     }
 
     @PostMapping("/token/refresh/")

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/route_helper.dart';
-import '../../screens/tasks/task_detail_screen.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -17,15 +17,16 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  late DateTime _currentMonth;
+  CalendarFormat _format = CalendarFormat.month;
+  DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
-  Map<String, List<Map<String, dynamic>>> _tasksByDate = {};
+  Map<DateTime, List<Map<String, dynamic>>> _tasksByDay = {};
   bool _isLoading = true;
+  String? _statusFilter;
 
   @override
   void initState() {
     super.initState();
-    _currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
     _selectedDay = DateTime.now();
     _loadTasks();
   }
@@ -36,119 +37,119 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       final resp = await ApiClient.get('tasks/my-tasks/');
       if (resp.statusCode == 200) {
         final List tasks = jsonDecode(resp.body);
-        final grouped = <String, List<Map<String, dynamic>>>{};
+        final grouped = <DateTime, List<Map<String, dynamic>>>{};
         for (final t in tasks) {
           final date = t['due_date'] as String?;
-          if (date != null) {
-            final key = date.substring(0, 10);
-            grouped.putIfAbsent(key, () => []).add(Map<String, dynamic>.from(t));
-          }
+          if (date == null) continue;
+          final parsed = DateTime.tryParse(date);
+          if (parsed == null) continue;
+          final dayKey = DateTime(parsed.year, parsed.month, parsed.day);
+          grouped.putIfAbsent(dayKey, () => []).add(Map<String, dynamic>.from(t));
         }
-        setState(() => _tasksByDate = grouped);
+        setState(() => _tasksByDay = grouped);
       }
     } catch (_) {}
     setState(() => _isLoading = false);
   }
 
-  void _previousMonth() {
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month - 1);
-      _loadTasks();
-    });
-  }
-
-  void _nextMonth() {
-    setState(() {
-      _currentMonth = DateTime(_currentMonth.year, _currentMonth.month + 1);
-      _loadTasks();
-    });
+  List<Map<String, dynamic>> _getTasksForDay(DateTime day) {
+    final key = DateTime(day.year, day.month, day.day);
+    var tasks = _tasksByDay[key] ?? [];
+    if (_statusFilter != null) {
+      tasks = tasks.where((t) => t['status'] == _statusFilter).toList();
+    }
+    return tasks;
   }
 
   @override
   Widget build(BuildContext context) {
-    final daysInMonth = DateTime(_currentMonth.year, _currentMonth.month + 1, 0).day;
-    final firstWeekday = DateTime(_currentMonth.year, _currentMonth.month, 1).weekday % 7;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         title: Text(
-          DateFormat('MMMM yyyy', 'fr_FR').format(_currentMonth),
+          DateFormat('MMMM yyyy', 'fr_FR').format(_focusedDay),
           style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(icon: const Icon(LucideIcons.chevronLeft), onPressed: _previousMonth),
-          IconButton(icon: const Icon(LucideIcons.chevronRight), onPressed: _nextMonth),
-        ],
       ),
       body: Column(
         children: [
+          Container(
+            color: AppColors.surface,
+            child: TableCalendar(
+            firstDay: DateTime(2020),
+            lastDay: DateTime(2035),
+            focusedDay: _focusedDay,
+            calendarFormat: _format,
+            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+            onDaySelected: (selected, focused) {
+              setState(() {
+                _selectedDay = selected;
+                _focusedDay = focused;
+              });
+            },
+            onFormatChanged: (format) => setState(() => _format = format),
+            onPageChanged: (focused) => setState(() => _focusedDay = focused),
+            eventLoader: (day) => _getTasksForDay(day),
+            locale: 'fr_FR',
+            headerStyle: HeaderStyle(
+              formatButtonVisible: true,
+              titleCentered: true,
+              titleTextStyle: GoogleFonts.outfit(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+              formatButtonDecoration: const BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.all(Radius.circular(12)),
+              ),
+              formatButtonTextStyle: const TextStyle(color: Colors.white, fontSize: 12),
+              leftChevronIcon: const Icon(LucideIcons.chevronLeft, color: AppColors.primary),
+              rightChevronIcon: const Icon(LucideIcons.chevronRight, color: AppColors.primary),
+            ),
+            calendarStyle: CalendarStyle(
+              todayDecoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              selectedDecoration: const BoxDecoration(
+                color: AppColors.primary,
+                shape: BoxShape.circle,
+              ),
+              defaultDecoration: const BoxDecoration(
+                color: Colors.transparent,
+              ),
+              weekendDecoration: const BoxDecoration(
+                color: Colors.transparent,
+              ),
+              outsideDecoration: const BoxDecoration(
+                color: Colors.transparent,
+              ),
+              markerDecoration: const BoxDecoration(
+                color: AppColors.accent,
+                shape: BoxShape.circle,
+              ),
+              todayTextStyle: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold),
+              selectedTextStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              defaultTextStyle: const TextStyle(color: Colors.white),
+              weekendTextStyle: const TextStyle(color: AppColors.textSecondary),
+              outsideTextStyle: const TextStyle(color: AppColors.textSecondary),
+            ),
+            daysOfWeekStyle: const DaysOfWeekStyle(
+              weekdayStyle: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+              weekendStyle: TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
+            ),
+          ),
+          ),
+          const Divider(color: AppColors.card, height: 1),
           Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
               children: [
-                Row(
-                  children: ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-                      .map((d) => Expanded(
-                            child: Center(
-                              child: Text(d, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
-                            ),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: 8),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 7,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: firstWeekday + daysInMonth,
-                  itemBuilder: (_, index) {
-                    if (index < firstWeekday) return const SizedBox();
-                    final day = index - firstWeekday + 1;
-                    final dateStr = '${_currentMonth.year}-${_currentMonth.month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
-                    final hasTasks = _tasksByDate.containsKey(dateStr);
-                    final isToday = dateStr == DateFormat('yyyy-MM-dd').format(DateTime.now());
-                    final isSelected = dateStr == (_selectedDay != null ? DateFormat('yyyy-MM-dd').format(_selectedDay!) : null);
-
-                    return GestureDetector(
-                      onTap: () => setState(() => _selectedDay = DateTime(_currentMonth.year, _currentMonth.month, day)),
-                      child: Container(
-                        margin: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: isSelected ? AppColors.primary.withValues(alpha: 0.3) : null,
-                          borderRadius: BorderRadius.circular(8),
-                          border: isToday ? Border.all(color: AppColors.primary, width: 2) : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              '$day',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
-                                color: isToday ? AppColors.primary : Colors.white,
-                              ),
-                            ),
-                            if (hasTasks)
-                              Container(
-                                width: 6,
-                                height: 6,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.accent,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                _buildFilterChip("Toutes", null),
+                const SizedBox(width: 8),
+                _buildFilterChip("En cours", 'IN_PROGRESS'),
+                const SizedBox(width: 8),
+                _buildFilterChip("Terminé", 'DONE'),
+                const SizedBox(width: 8),
+                _buildFilterChip("Révision", 'REVIEW'),
               ],
             ),
           ),
@@ -163,8 +164,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Widget _buildDayTasks() {
     if (_selectedDay == null) return const SizedBox();
-    final dateStr = DateFormat('yyyy-MM-dd').format(_selectedDay!);
-    final tasks = _tasksByDate[dateStr] ?? [];
+    final dateStr = DateFormat('EEEE d MMMM', 'fr_FR').format(_selectedDay!);
+    var tasks = _getTasksForDay(_selectedDay!);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +173,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: Text(
-            DateFormat('EEEE d MMMM', 'fr_FR').format(_selectedDay!),
+            dateStr,
             style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 16),
           ),
         ),
@@ -206,6 +207,29 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String? status) {
+    final isSelected = _statusFilter == status;
+    return GestureDetector(
+      onTap: () => setState(() => _statusFilter = status),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary.withValues(alpha: 0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? AppColors.primary : AppColors.textSecondary.withValues(alpha: 0.3)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 

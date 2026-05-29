@@ -18,7 +18,7 @@ class NotificationRepository {
     final response = await ApiClient.get('notifications/');
     if (response.statusCode == 200) {
       final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
+      final List data = decoded is Map ? (decoded['content'] ?? decoded['results'] ?? []) : decoded;
       return data.map((json) => NotificationModel.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des notifications");

@@ -3,6 +3,8 @@ package com.collabsme.invitation;
 import com.collabsme.auth.AuthService;
 import com.collabsme.auth.dto.AuthResponse;
 import com.collabsme.auth.dto.RegisterRequest;
+import com.collabsme.company.Company;
+import com.collabsme.company.CompanyRepository;
 import com.collabsme.config.BrevoEmailService;
 import com.collabsme.notification.NotificationService;
 import com.collabsme.user.Role;
@@ -10,6 +12,7 @@ import com.collabsme.user.User;
 import com.collabsme.user.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,19 +27,25 @@ public class InvitationController {
 
     private static final Logger log = LoggerFactory.getLogger(InvitationController.class);
 
+    @Value("${app.base-url}")
+    private String appBaseUrl;
+
     private final InvitationRepository invitationRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final AuthService authService;
     private final BrevoEmailService brevoEmailService;
     private final NotificationService notificationService;
 
     public InvitationController(InvitationRepository invitationRepository,
                                 UserRepository userRepository,
+                                CompanyRepository companyRepository,
                                 AuthService authService,
                                 BrevoEmailService brevoEmailService,
                                 NotificationService notificationService) {
         this.invitationRepository = invitationRepository;
         this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
         this.authService = authService;
         this.brevoEmailService = brevoEmailService;
         this.notificationService = notificationService;
@@ -51,42 +60,50 @@ public class InvitationController {
     @PostMapping({"/", ""})
     public ResponseEntity<?> create(@AuthenticationPrincipal User user,
                                      @RequestBody Map<String, String> body) {
-        if (!user.isCompanyAdmin()) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(Map.of("error", "Action non autorisée."));
-        }
-        String email = body.get("email");
-        String roleStr = body.getOrDefault("role", "MEMBER");
-
-        if (invitationRepository.existsByCompanyAndEmail(user.getCompany(), email)) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Une invitation existe déjà pour cet email."));
-        }
-
-        Invitation invitation = new Invitation();
-        invitation.setCompany(user.getCompany());
-        invitation.setEmail(email);
         try {
-            invitation.setRole(Role.valueOf(roleStr));
-        } catch (IllegalArgumentException e) {
-            invitation.setRole(Role.MEMBER);
+            if (!user.isCompanyAdmin()) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body(Map.of("error", "Action non autorisée."));
+            }
+            Company company = companyRepository.findById(user.getCompany().getId())
+                    .orElseThrow(() -> new RuntimeException("Entreprise introuvable."));
+            String email = body.get("email");
+            String roleStr = body.getOrDefault("role", "MEMBER");
+
+            if (invitationRepository.existsByCompanyAndEmail(company, email)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Une invitation existe déjà pour cet email."));
+            }
+
+            Invitation invitation = new Invitation();
+            invitation.setCompany(company);
+            invitation.setEmail(email);
+            try {
+                invitation.setRole(Role.valueOf(roleStr));
+            } catch (IllegalArgumentException e) {
+                invitation.setRole(Role.MEMBER);
+            }
+            invitation.setInvitedBy(user);
+            invitation = invitationRepository.save(invitation);
+
+            // Send email
+            String companyName = company.getName();
+            String inviterName = user.getFirstName() + " " + user.getLastName();
+            String html = "<h2>Invitation à rejoindre " + companyName + "</h2>"
+                    + "<p>" + inviterName + " vous a invité à rejoindre " + companyName + ".</p>"
+                    + "<p><a href=\"" + appBaseUrl + "/accept-invitation?token=" + invitation.getToken() + "\">Accepter l'invitation</a></p>"
+                    + "<p>Token: " + invitation.getToken() + "</p>";
+            String text = "Invitation à rejoindre " + companyName
+                    + "\n\n" + inviterName + " vous a invité à rejoindre " + companyName + "."
+                    + "\n\nToken: " + invitation.getToken();
+            brevoEmailService.sendEmail(email, "Invitation à rejoindre " + companyName, html, text);
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(invitation);
+        } catch (Exception e) {
+            log.error("Erreur création invitation", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getClass().getSimpleName() + ": " + e.getMessage()));
         }
-        invitation.setInvitedBy(user);
-        invitation = invitationRepository.save(invitation);
-
-        // Send email
-        String companyName = user.getCompany().getName();
-        String inviterName = user.getFirstName() + " " + user.getLastName();
-        String html = "<h2>Invitation à rejoindre " + companyName + "</h2>"
-                + "<p>" + inviterName + " vous a invité à rejoindre " + companyName + ".</p>"
-                + "<p><a href=\"https://koda.app/invitation?token=" + invitation.getToken() + "\">Accepter l'invitation</a></p>"
-                + "<p>Token: " + invitation.getToken() + "</p>";
-        String text = "Invitation à rejoindre " + companyName
-                + "\n\n" + inviterName + " vous a invité à rejoindre " + companyName + "."
-                + "\n\nToken: " + invitation.getToken();
-        brevoEmailService.sendEmail(email, "Invitation à rejoindre " + companyName, html, text);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(invitation);
     }
 
     @DeleteMapping({"/{pk}/", "/{pk}"})
@@ -116,15 +133,23 @@ public class InvitationController {
                 .filter(i -> i.getStatus() == InvitationStatus.PENDING)
                 .orElseThrow(() -> new RuntimeException("Lien d'invitation invalide ou expiré."));
 
-        request.setEmail(invitation.getEmail());
-        request.setCompanyName(invitation.getCompany().getName());
-        AuthResponse authResponse = authService.register(request);
+        if (userRepository.existsByEmail(invitation.getEmail())) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Un compte avec cet email existe déjà."));
+        }
 
-        User user = userRepository.findByEmail(invitation.getEmail()).orElseThrow();
+        User user = new User();
+        user.setEmail(invitation.getEmail());
+        user.setPassword(authService.encodePassword(request.getPassword()));
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
         user.setCompany(invitation.getCompany());
         user.setRole(invitation.getRole());
         user.setCompanyAdmin(invitation.getRole() == Role.ADMIN);
-        userRepository.save(user);
+        user = userRepository.save(user);
+
+        AuthResponse authResponse = authService.buildAuthResponse(user);
 
         invitation.setStatus(InvitationStatus.ACCEPTED);
         invitationRepository.save(invitation);

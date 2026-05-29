@@ -92,7 +92,6 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     String? firstName,
     String? lastName,
     String? phoneNumber,
-    String? avatarUrl,
     String? bio,
     Map<String, dynamic>? preferences,
   }) async {
@@ -101,7 +100,6 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
         firstName: firstName,
         lastName: lastName,
         phoneNumber: phoneNumber,
-        avatarUrl: avatarUrl,
         bio: bio,
         preferences: preferences,
       );

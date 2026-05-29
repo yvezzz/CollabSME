@@ -10,7 +10,6 @@ import '../../../core/network/route_helper.dart';
 import '../../../data/models/task_model.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../presentation/widgets/task_create_dialog.dart';
-import 'task_detail_screen.dart';
 import '../../../presentation/widgets/app_toast.dart';
 
 Future<void> _promptNewTask(
@@ -364,9 +363,20 @@ class _TaskBoardContentState extends ConsumerState<_TaskBoardContent> {
                 ref.read(taskListProvider(widget.projectId).notifier).moveTask(details.data, status);
               },
               builder: (context, candidateData, rejectedData) {
-                return ListView.builder(
-                  itemCount: tasks.length,
-                  itemBuilder: (context, index) => _buildKanbanCard(context, tasks[index]),
+                final isHovering = candidateData.isNotEmpty;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: isHovering ? AppColors.primary.withValues(alpha: 0.08) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    border: isHovering
+                        ? Border.all(color: AppColors.primary.withValues(alpha: 0.3))
+                        : null,
+                  ),
+                  child: ListView.builder(
+                    itemCount: tasks.length,
+                    itemBuilder: (context, index) => _buildKanbanCard(context, tasks[index]),
+                  ),
                 );
               },
             ),
@@ -381,22 +391,15 @@ class _TaskBoardContentState extends ConsumerState<_TaskBoardContent> {
       data: task.id,
       feedback: Material(
         color: Colors.transparent,
-        child: SizedBox(width: 260, child: _kanbanCardContent(task)),
+        child: SizedBox(
+          width: 260,
+          child: _kanbanCardContent(task).animate().scaleXY(begin: 1.05, end: 1.05),
+        ),
       ),
-      childWhenDragging: Opacity(opacity: 0.3, child: _kanbanCardContent(task)),
-      child: DragTarget<String>(
-        onAcceptWithDetails: (details) {
-          final droppedId = details.data;
-          if (droppedId != task.id) {
-            ref.read(taskListProvider(widget.projectId).notifier).moveTask(droppedId, task.status);
-          }
-        },
-        builder: (context, candidateData, rejectedData) {
-          return GestureDetector(
-            onTap: () => Navigator.pushNamed(context, '${Routes.taskDetail}/${widget.projectId}/${task.id}'),
-            child: _kanbanCardContent(task),
-          );
-        },
+      childWhenDragging: Opacity(opacity: 0.25, child: _kanbanCardContent(task)),
+      child: GestureDetector(
+        onTap: () => Navigator.pushNamed(context, '${Routes.taskDetail}/${widget.projectId}/${task.id}'),
+        child: _kanbanCardContent(task),
       ),
     );
   }

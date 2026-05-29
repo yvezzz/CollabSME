@@ -1,6 +1,7 @@
 package com.collabsme.user;
 
 import com.collabsme.company.Company;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -34,7 +35,6 @@ public class User {
 
     private boolean isCompanyAdmin = false;
 
-    private String avatarUrl;
     private String bio;
 
     @Column(columnDefinition = "TEXT")
@@ -51,6 +51,7 @@ public class User {
     public void setId(Long id) { this.id = id; }
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+    @JsonIgnore
     public String getPassword() { return password; }
     public void setPassword(String password) { this.password = password; }
     public String getFirstName() { return firstName; }
@@ -65,8 +66,6 @@ public class User {
     public void setRole(Role role) { this.role = role; }
     public boolean isCompanyAdmin() { return isCompanyAdmin; }
     public void setCompanyAdmin(boolean companyAdmin) { isCompanyAdmin = companyAdmin; }
-    public String getAvatarUrl() { return avatarUrl; }
-    public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
     public String getPreferences() { return preferences; }

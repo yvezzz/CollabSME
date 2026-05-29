@@ -4,6 +4,7 @@ import 'package:collabsme/core/network/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'presentation/screens/home/home_screen.dart';
 import 'presentation/screens/public/landing_screen.dart';
@@ -14,17 +15,16 @@ import 'presentation/providers/theme_provider.dart';
 import 'presentation/widgets/connection_error_screen.dart';
 import 'core/network/route_helper.dart';
 
-void main() {
+Future<void> main() async {
   usePathUrlStrategy();
-  runZonedGuarded(() {
-    FlutterError.onError = (details) {
-      FlutterError.presentError(details);
-      debugPrint('Flutter Error: ${details.exception}\n${details.stack}');
-    };
-    runApp(const ProviderScope(child: CollabSMEApp()));
-  }, (error, stack) {
-    debugPrint('Unhandled Error: $error\n$stack');
-  });
+  WidgetsFlutterBinding.ensureInitialized();
+  await ApiClient.init();
+  await initializeDateFormatting('fr_FR');
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    debugPrint('Flutter Error: ${details.exception}\n${details.stack}');
+  };
+  runApp(const ProviderScope(child: CollabSMEApp()));
 }
 
 class CollabSMEApp extends ConsumerStatefulWidget {
@@ -67,11 +67,35 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
 
   void _navigateDeepLink(Uri uri, {bool replace = false}) {
     final route = _buildDeepLinkRoute(uri);
-    if (route == null) {
-      debugPrint('DeepLink: no match for $uri');
+    if (route != null) {
+      _pushWithRetry(route, retries: 20, replace: replace);
       return;
     }
-    _pushWithRetry(route, retries: 20, replace: replace);
+    // Fallback to named route via onGenerateRoute
+    final path = uri.path;
+    debugPrint('DeepLink: fallback to pushNamed $path');
+    _pushNamedWithRetry(path, retries: 20, replace: replace);
+  }
+
+  void _pushNamedWithRetry(String path, {int retries = 20, bool replace = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final nav = _navigatorKey.currentState;
+      if (nav != null) {
+        debugPrint('DeepLink: pushing named route $path (replace=$replace)');
+        if (replace) {
+          nav.pushNamedAndRemoveUntil(path, (r) => false);
+        } else {
+          nav.pushNamed(path);
+        }
+      } else if (retries > 0) {
+        debugPrint('DeepLink: navigator not ready, retrying ($retries left)');
+        Future.delayed(const Duration(milliseconds: 500), () {
+          _pushNamedWithRetry(path, retries: retries - 1, replace: replace);
+        });
+      } else {
+        debugPrint('DeepLink: navigator never became available');
+      }
+    });
   }
 
   void _pushWithRetry(Route<dynamic> route, {int retries = 20, bool replace = false}) {
@@ -99,13 +123,16 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
     final segs = uri.pathSegments.where((s) => s.isNotEmpty).toList();
     if (segs.isEmpty) return null;
     if (segs[0] == 'reset-password') {
-      final email = segs.length >= 3 ? Uri.decodeComponent(segs[1]) : '';
-      final token = segs.length >= 2 ? segs.last : '';
+      final email = Uri.decodeComponent(uri.queryParameters['email'] ?? '');
+      final token = uri.queryParameters['token'] ?? '';
       debugPrint('DeepLink: reset-password email=$email token=$token');
       return MaterialPageRoute(builder: (_) => ResetPasswordScreen(email: email, token: token));
     }
-    if (segs[0] == 'accept-invitation' && segs.length >= 2) {
-      return MaterialPageRoute(builder: (_) => AcceptInvitationScreen(token: segs[1]));
+    if (segs[0] == 'accept-invitation') {
+      final token = segs.length >= 2 ? segs[1] : uri.queryParameters['token'] ?? '';
+      if (token.isNotEmpty) {
+        return MaterialPageRoute(builder: (_) => AcceptInvitationScreen(token: token));
+      }
     }
     debugPrint('DeepLink: unknown path=${segs.join("/")}');
     return null;

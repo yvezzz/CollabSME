@@ -8,7 +8,6 @@ import '../../../core/network/route_helper.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/task_provider.dart';
 import '../../../data/models/task_model.dart';
-import '../../screens/tasks/task_detail_screen.dart';
 import 'package:intl/intl.dart';
 
 /// Écran de gestion des tâches personnelles de l'utilisateur.
@@ -30,59 +29,36 @@ class MyTasksScreen extends ConsumerWidget {
             child: tasksAsync.when(
               data: (tasks) {
                 final now = DateTime.now();
-                final overdue = tasks
-                    .where(
-                      (t) =>
-                          t.dueDate != null &&
-                          t.dueDate!.isBefore(
-                            DateTime(now.year, now.month, now.day),
-                          ),
-                    )
-                    .toList();
-                final today = tasks
-                    .where(
-                      (t) =>
-                          t.dueDate != null &&
-                          t.dueDate!.year == now.year &&
-                          t.dueDate!.month == now.month &&
-                          t.dueDate!.day == now.day,
-                    )
-                    .toList();
-                final later = tasks
-                    .where(
-                      (t) =>
-                          t.dueDate == null ||
-                          t.dueDate!.isAfter(
-                            DateTime(now.year, now.month, now.day),
-                          ),
-                    )
-                    .toList();
+                final todayStart = DateTime(now.year, now.month, now.day);
+
+                final inProgress = tasks.where((t) => t.status == 'IN_PROGRESS').toList();
+                final overdue = tasks.where((t) =>
+                    t.status != 'DONE' &&
+                    t.dueDate != null &&
+                    t.dueDate!.isBefore(todayStart)).toList();
+                final todo = tasks.where((t) =>
+                    t.status == 'TODO' &&
+                    (t.dueDate == null || !t.dueDate!.isBefore(todayStart))).toList();
+                final done = tasks.where((t) => t.status == 'DONE').toList();
 
                 return RefreshIndicator(
                   onRefresh: () async =>
                       ref.invalidate(userTasksProvider),
                   child: ListView(
                     children: [
+                      if (inProgress.isNotEmpty)
+                        _buildTaskCategory(context, "En cours", AppColors.primary, inProgress),
                       if (overdue.isNotEmpty)
-                        _buildTaskCategory(
-                          context,
-                          "En retard",
-                          AppColors.danger,
-                          overdue,
+                        _buildTaskCategory(context, "En retard", AppColors.danger, overdue),
+                      if (todo.isNotEmpty)
+                        _buildTaskCategory(context, "À faire", AppColors.textSecondary, todo),
+                      if (done.isNotEmpty)
+                        _buildTaskCategory(context, "Terminé", AppColors.accent, done),
+                      if (tasks.isEmpty)
+                        const Padding(
+                          padding: EdgeInsets.only(top: 32),
+                          child: Center(child: Text("Aucune tâche", style: TextStyle(color: AppColors.textSecondary))),
                         ),
-                      if (today.isNotEmpty)
-                        _buildTaskCategory(
-                          context,
-                          "À faire aujourd'hui",
-                          AppColors.primary,
-                          today,
-                        ),
-                      _buildTaskCategory(
-                        context,
-                        "À faire plus tard",
-                        AppColors.textSecondary,
-                        later,
-                      ),
                     ],
                   ),
                 );
