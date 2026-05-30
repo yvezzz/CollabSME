@@ -5,6 +5,7 @@ import '../../presentation/screens/public/features_screen.dart';
 import '../../presentation/screens/public/contact_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
 import '../../presentation/screens/auth/register_screen.dart';
+import '../../presentation/screens/home/home_screen.dart';
 import '../../presentation/screens/home/ai_assistant_screen.dart';
 import '../../presentation/screens/home/company_settings_screen.dart';
 import '../../presentation/screens/home/team_screen.dart';
@@ -19,6 +20,7 @@ import '../../presentation/screens/tasks/task_edit_screen.dart';
 import '../../presentation/screens/activity/activity_log_screen.dart';
 
 class Routes {
+  static const String home = '/home';
   static const String features = '/features';
   static const String contact = '/contact';
   static const String login = '/login';
@@ -41,6 +43,8 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
   final name = settings.name ?? '';
 
   switch (name) {
+    case Routes.home:
+      return MaterialPageRoute(builder: (_) => const HomeScreen(), settings: settings);
     case Routes.projectCreate:
       return MaterialPageRoute(builder: (_) => const AddProjectScreen(), settings: settings);
     case Routes.features:
