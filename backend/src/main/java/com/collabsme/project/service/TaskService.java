@@ -8,6 +8,7 @@ import com.collabsme.notification.NotificationService;
 import com.collabsme.project.model.*;
 import com.collabsme.project.repository.*;
 import com.collabsme.user.User;
+import com.collabsme.user.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -31,12 +32,14 @@ public class TaskService {
     private final ActivityLogRepository activityLogRepository;
     private final ProjectMemberRepository memberRepository;
     private final NotificationService notificationService;
+    private final UserRepository userRepository;
 
     public TaskService(TaskRepository taskRepository, ChecklistItemRepository checklistItemRepository,
                        CommentRepository commentRepository, AttachmentRepository attachmentRepository,
                        ActivityLogRepository activityLogRepository,
                        ProjectMemberRepository memberRepository,
-                       NotificationService notificationService) {
+                       NotificationService notificationService,
+                       UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.checklistItemRepository = checklistItemRepository;
         this.commentRepository = commentRepository;
@@ -44,6 +47,7 @@ public class TaskService {
         this.activityLogRepository = activityLogRepository;
         this.memberRepository = memberRepository;
         this.notificationService = notificationService;
+        this.userRepository = userRepository;
     }
 
     public Page<Task> getTasks(Project project, String status, String assignedTo, String search,
@@ -119,6 +123,45 @@ public class TaskService {
                 "Tâche \"" + task.getTitle() + "\" : " + newStatus,
                 "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + task.getId() + "\",\"status\":\"" + newStatus + "\"}");
         return task;
+    }
+
+    @Transactional
+    public Task updateTask(Project project, Long taskId, Map<String, Object> body, User user) {
+        Task task = getTask(project, taskId);
+        if (body.containsKey("title")) task.setTitle((String) body.get("title"));
+        if (body.containsKey("description")) task.setDescription((String) body.get("description"));
+        if (body.containsKey("priority")) {
+            try { task.setPriority(Priority.valueOf((String) body.get("priority"))); } catch (Exception ignored) {}
+        }
+        if (body.containsKey("due_date")) {
+            try { task.setDueDate(java.time.LocalDate.parse((String) body.get("due_date"))); } catch (Exception ignored) {}
+        }
+        if (body.containsKey("assigned_to")) {
+            try {
+                Long assignedId = Long.valueOf(body.get("assigned_to").toString());
+                userRepository.findById(assignedId).ifPresent(task::setAssignedTo);
+            } catch (Exception ignored) {}
+        }
+        if (body.containsKey("status")) {
+            try { task.setStatus(TaskStatus.valueOf((String) body.get("status"))); } catch (Exception ignored) {}
+        }
+        Task saved = taskRepository.save(task);
+        logActivity(project.getCompany(), user, "TASK_UPDATED",
+                "Tâche \"" + saved.getTitle() + "\" modifiée",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + saved.getId() + "\"}");
+        return saved;
+    }
+
+    @Transactional
+    public void deleteTask(Project project, Long taskId, User user) {
+        Task task = getTask(project, taskId);
+        commentRepository.deleteByTaskId(taskId);
+        checklistItemRepository.deleteByTaskId(taskId);
+        attachmentRepository.deleteByTaskId(taskId);
+        taskRepository.delete(task);
+        logActivity(project.getCompany(), user, "TASK_DELETED",
+                "Tâche \"" + task.getTitle() + "\" supprimée",
+                "{\"project_id\":\"" + project.getId() + "\",\"task_id\":\"" + taskId + "\"}");
     }
 
     @Transactional

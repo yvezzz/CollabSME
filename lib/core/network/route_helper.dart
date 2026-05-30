@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../data/models/project_model.dart';
+import '../../data/models/task_model.dart';
 import '../../presentation/screens/public/features_screen.dart';
 import '../../presentation/screens/public/contact_screen.dart';
 import '../../presentation/screens/auth/login_screen.dart';
@@ -7,11 +9,13 @@ import '../../presentation/screens/home/ai_assistant_screen.dart';
 import '../../presentation/screens/home/company_settings_screen.dart';
 import '../../presentation/screens/home/team_screen.dart';
 import '../../presentation/screens/projects/add_project_screen.dart';
+import '../../presentation/screens/projects/project_edit_screen.dart';
 import '../../presentation/screens/projects/project_details_screen.dart';
 import '../../presentation/screens/projects/project_members_screen.dart';
 import '../../presentation/screens/tasks/task_board_screen.dart';
 import '../../presentation/screens/tasks/task_create_screen.dart';
 import '../../presentation/screens/tasks/task_detail_screen.dart';
+import '../../presentation/screens/tasks/task_edit_screen.dart';
 import '../../presentation/screens/activity/activity_log_screen.dart';
 
 class Routes {
@@ -22,11 +26,13 @@ class Routes {
   static const String aiAssistant = '/ai-assistant';
   static const String companySettings = '/company-settings';
   static const String projectCreate = '/projects/create';
+  static const String projectEdit = '/projects/edit';
   static const String projectDetails = '/projects';
   static const String projectMembers = '/projects/members';
   static const String taskBoard = '/tasks/board';
   static const String taskCreate = '/tasks/create';
   static const String taskDetail = '/tasks/detail';
+  static const String taskEdit = '/tasks/edit';
   static const String activityLog = '/activity';
   static const String team = '/team';
 }
@@ -53,23 +59,38 @@ Route<dynamic>? generateRoute(RouteSettings settings) {
       return MaterialPageRoute(builder: (_) => const TeamScreen(), settings: settings);
   }
 
-  if (name.startsWith('${Routes.projectDetails}/')) {
-    final projectId = name.split('/').last;
-    return MaterialPageRoute(builder: (_) => ProjectDetailsScreen(projectId: projectId), settings: settings);
+  // Order matters: most specific routes first
+  if (name == '${Routes.projectEdit}' || name.startsWith('${Routes.projectEdit}/')) {
+    final project = settings.arguments as ProjectModel;
+    return MaterialPageRoute(builder: (_) => ProjectEditScreen(project: project), settings: settings);
   }
   if (name.startsWith('${Routes.projectMembers}/')) {
     final projectId = name.split('/').last;
     return MaterialPageRoute(builder: (_) => ProjectMembersScreen(projectId: projectId), settings: settings);
   }
+  if (name.startsWith('${Routes.projectDetails}/') && !name.startsWith('${Routes.projectMembers}/')) {
+    final projectId = name.split('/').last;
+    return MaterialPageRoute(builder: (_) => ProjectDetailsScreen(projectId: projectId), settings: settings);
+  }
   if (name.startsWith('${Routes.taskCreate}/')) {
     final parts = name.split('/');
-    final projectId = parts.length >= 4 ? parts[3] : (settings.arguments as String? ?? '');
-    return MaterialPageRoute(builder: (_) => TaskCreateScreen(projectId: projectId), settings: settings);
+    final projectId = parts.length >= 4 ? parts[3] : '';
+    final columnStatus = settings.arguments is String ? settings.arguments as String : 'TODO';
+    return MaterialPageRoute(builder: (_) => TaskCreateScreen(projectId: projectId, columnStatus: columnStatus), settings: settings);
   }
   if (name.startsWith('${Routes.taskBoard}/')) {
     final parts = name.split('/');
     final projectId = parts.length >= 4 ? parts[3] : (settings.arguments as String? ?? '');
     return MaterialPageRoute(builder: (_) => TaskBoardScreen(projectId: projectId, projectName: 'Projet'), settings: settings);
+  }
+  if (name.startsWith('${Routes.taskEdit}/')) {
+    final parts = name.split('/');
+    if (parts.length >= 5) {
+      final projectId = parts[3];
+      final args = settings.arguments as Map<String, dynamic>;
+      final task = args['task'] as TaskModel;
+      return MaterialPageRoute(builder: (_) => TaskEditScreen(projectId: projectId, task: task), settings: settings);
+    }
   }
   if (name.startsWith('${Routes.taskDetail}/')) {
     final parts = name.split('/');

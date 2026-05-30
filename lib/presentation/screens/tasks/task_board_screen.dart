@@ -9,8 +9,6 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/network/route_helper.dart';
 import '../../../data/models/task_model.dart';
 import '../../../widgets/glass_container.dart';
-import '../../../presentation/widgets/task_create_dialog.dart';
-import '../../../presentation/widgets/app_toast.dart';
 
 Future<void> _promptNewTask(
   BuildContext context,
@@ -18,30 +16,13 @@ Future<void> _promptNewTask(
   String projectId,
   String columnStatus,
 ) async {
-  final result = await showDialog<Map<String, dynamic>>(
-    context: context,
-    builder: (_) => TaskCreateDialog(columnStatus: columnStatus),
+  final result = await Navigator.pushNamed(
+    context,
+    '${Routes.taskCreate}/$projectId',
+    arguments: columnStatus,
   );
   if (result != null && context.mounted) {
-    try {
-      await ref
-          .read(taskListProvider(projectId).notifier)
-          .createTaskInColumn(
-            title: result['title'],
-            description: result['description'] ?? '',
-            status: columnStatus,
-            assignedTo: result['assigned_to'],
-            priority: result['priority'] ?? 'MEDIUM',
-            dueDate: result['due_date'],
-          );
-      if (context.mounted) {
-        AppToast.show(context, message: 'Tâche créée', type: ToastType.success);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        AppToast.show(context, message: 'Erreur : $e', type: ToastType.error);
-      }
-    }
+    ref.invalidate(taskListProvider(projectId));
   }
 }
 
@@ -485,10 +466,8 @@ class _TaskBoardContentState extends ConsumerState<_TaskBoardContent> {
   }
 
   Widget _statusLabel(String status) {
-    final labels = {'TODO': 'À faire', 'IN_PROGRESS': 'En cours', 'REVIEW': 'Révision', 'DONE': 'Terminé'};
-    final colors = {'TODO': Colors.grey, 'IN_PROGRESS': AppColors.primary, 'REVIEW': Colors.orange, 'DONE': AppColors.accent};
-    final label = labels[status] ?? status;
-    final color = colors[status] ?? Colors.grey;
+    final label = AppColors.statusLabel(status);
+    final color = AppColors.statusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(

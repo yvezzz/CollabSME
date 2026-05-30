@@ -13,10 +13,10 @@ class Company {
 
   factory Company.fromJson(Map<String, dynamic> json) {
     return Company(
-      id: json['id'],
-      name: json['name'],
-      createdAt: DateTime.parse(json['created_at']),
-      subscriptionStatus: json['subscription_status'],
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      name: json['name']?.toString() ?? '',
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      subscriptionStatus: json['subscription_status']?.toString(),
     );
   }
 

@@ -151,11 +151,17 @@ class MyTasksScreen extends ConsumerWidget {
             child: Row(
               children: [
                 IconButton(
-                  onPressed: () {},
-                  icon: const Icon(
-                    LucideIcons.circle,
+                  onPressed: task.projectId != null
+                      ? () => Navigator.of(context).pushNamed(
+                            '${Routes.taskDetail}/${task.projectId}/${task.id}',
+                          )
+                      : null,
+                  icon: Icon(
+                    task.status == 'DONE' ? LucideIcons.checkCircle : LucideIcons.circle,
                     size: 20,
-                    color: AppColors.textSecondary,
+                    color: task.status == 'DONE'
+                        ? AppColors.accent
+                        : AppColors.textSecondary,
                   ),
                 ),
                 const SizedBox(width: 12),

@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import '../constants/app_constants.dart';
 import '../../data/models/notification_model.dart';
+import '../../utils/safe_parser.dart';
 
 class NotificationService {
   WebSocketChannel? _channel;
@@ -52,12 +52,13 @@ class NotificationService {
 
       _channel!.stream.listen(
         (message) {
-          final data = jsonDecode(message);
-          if (data['type'] == 'notification') {
-            final notification = NotificationModel.fromJson(
-              data['notification'],
-            );
-            onNotificationReceived(notification);
+          final data = SafeParser.safeJsonDecode(message);
+          if (data is Map && data['type'] == 'notification') {
+            final notifData = data['notification'];
+            if (notifData is Map<String, dynamic>) {
+              final notification = NotificationModel.fromJson(notifData);
+              onNotificationReceived(notification);
+            }
           }
         },
         onDone: () {

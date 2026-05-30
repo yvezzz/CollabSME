@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
@@ -11,6 +10,7 @@ import 'package:collabsme/data/models/user_model.dart';
 import 'package:collabsme/core/network/api_client.dart';
 import 'package:collabsme/core/constants/app_constants.dart';
 import 'package:collabsme/presentation/providers/auth_provider.dart';
+import 'package:collabsme/utils/safe_parser.dart';
 
 class ProjectMembersScreen extends ConsumerStatefulWidget {
   final String projectId;
@@ -50,11 +50,14 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
       ]);
       if (mounted) {
         setState(() {
-          _members = results[0] as List<ProjectMemberModel>;
-          _companyUsers = results[1] as List<UserModel>;
-          final workloadResp = results[2] as http.Response;
-          if (workloadResp.statusCode == 200) {
-            _workload = List<Map<String, dynamic>>.from(jsonDecode(workloadResp.body));
+          _members = results[0] is List<ProjectMemberModel> ? results[0] as List<ProjectMemberModel> : (results[0] is List ? (results[0] as List).whereType<ProjectMemberModel>().toList() : []);
+          _companyUsers = results[1] is List<UserModel> ? results[1] as List<UserModel> : (results[1] is List ? (results[1] as List).whereType<UserModel>().toList() : []);
+          final workloadResp = results[2];
+          if (workloadResp is http.Response && workloadResp.statusCode == 200) {
+            final decoded = SafeParser.safeDecodeList(workloadResp.body);
+            if (decoded != null) {
+              _workload = decoded.whereType<Map<String, dynamic>>().toList();
+            }
           }
           _isLoading = false;
         });

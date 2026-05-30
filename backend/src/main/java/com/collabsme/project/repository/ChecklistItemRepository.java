@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface ChecklistItemRepository extends JpaRepository<ChecklistItem, Long> {
     List<ChecklistItem> findByTaskOrderByOrderAsc(Task task);
+    void deleteByTaskId(Long taskId);
 }

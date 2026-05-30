@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import 'connection_monitor.dart';
+import '../../utils/safe_parser.dart';
 
 typedef _AuthedRequest =
     Future<http.Response> Function(Map<String, String> headers);
@@ -68,14 +69,19 @@ class ApiClient {
           )
           .timeout(const Duration(seconds: 30));
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body) as Map<String, dynamic>;
-        final access = data['access'] as String?;
-        if (access != null) await saveToken(access);
-        final newRefresh = data['refresh'];
-        if (newRefresh is String && newRefresh.isNotEmpty) {
-          await saveRefreshToken(newRefresh);
+        try {
+          final data = SafeParser.safeDecodeMap(response.body);
+          if (data == null) return false;
+          final access = SafeParser.parseString(data['access']);
+          if (access.isNotEmpty) await saveToken(access);
+          final newRefresh = data['refresh'];
+          if (newRefresh is String && newRefresh.isNotEmpty) {
+            await saveRefreshToken(newRefresh);
+          }
+          return true;
+        } catch (_) {
+          return false;
         }
-        return true;
       }
       await removeToken();
       return false;
@@ -93,7 +99,7 @@ class ApiClient {
       var headers = await _getHeaders(authenticated: authenticated);
       var response = await send(headers).timeout(timeout);
       if (authenticated &&
-          response.statusCode == 401 &&
+          (response.statusCode == 401 || response.statusCode == 403) &&
           await getRefreshToken() != null) {
         final refreshed = await _refreshAccessTokenIfPossible();
         if (refreshed) {
@@ -256,7 +262,7 @@ class ApiClient {
     request.fields.addAll(fields);
     request.files.addAll(files);
 
-    final streamed = await request.send();
+    final streamed = await request.send().timeout(const Duration(seconds: 120));
     return http.Response.fromStream(streamed);
   }
 }

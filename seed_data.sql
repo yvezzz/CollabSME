@@ -51,6 +51,22 @@ VALUES (
   1
 );
 
+-- Créer Chloé Nkoa (LEAD)
+INSERT INTO users (bio, date_joined, email, first_name, is_company_admin, last_name, password, phone_number, preferences, role, company_id)
+VALUES (
+  'Chef de projet certifiée PMP, experte en méthodologie Agile et gestion d''équipes',
+  NOW(),
+  'chloe.nkoa@collabsme.com',
+  'Chloé',
+  0,
+  'Nkoa',
+  '$2a$10$u0tl8isH3/HEXueAPcz7R..t0PHzlWl69exFXfZNDTjGf0hnXHA1m',
+  '+237 699 012 345',
+  '{}',
+  'LEAD',
+  1
+);
+
 -- Créer Paul Ngassa (MEMBER)
 INSERT INTO users (bio, date_joined, email, first_name, is_company_admin, last_name, password, phone_number, preferences, role, company_id)
 VALUES (
@@ -175,6 +191,10 @@ INSERT INTO project_members (project_id, user_id, role, joined_at)
 VALUES (20, 1, 'ADMIN', NOW()), (20, 3, 'LEAD', NOW()),
        (20, 2, 'MEMBER', NOW()), (20, 4, 'MEMBER', NOW());
 
+-- Nouvel utilisateur Chloé (5) — Lead sur App Mobile, membre sur Infra AWS
+INSERT IGNORE INTO project_members (project_id, user_id, role, joined_at)
+VALUES (17, 5, 'LEAD', NOW()), (18, 5, 'MEMBER', NOW());
+
 -- ============================================================
 -- 6. TÂCHES
 -- ============================================================
@@ -186,20 +206,20 @@ VALUES (11, 1, 2, '2026-05-20 09:00:00', '2026-05-25 14:00:00', 'Configuration G
         '["ci-cd","github-actions","workflows"]', '{}', 16, 14, '2026-05-20');
 
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
-VALUES (11, 1, 4, '2026-05-25 10:00:00', '2026-05-25 10:00:00', 'Mise en place des tests automatisés',
-        'Configurer les tests unitaires et d''intégration dans le pipeline', 'TODO', 'MEDIUM', '2026-05-25', 2,
-        '["tests","ci-cd","automatisation"]', '{}', 12, NULL, '2026-05-25');
+VALUES (11, 1, 4, '2026-05-25 10:00:00', '2026-05-24 16:00:00', 'Mise en place des tests automatisés',
+        'Configurer les tests unitaires et d''intégration dans le pipeline', 'DONE', 'MEDIUM', '2026-05-25', 2,
+        '["tests","ci-cd","automatisation"]', '{}', 12, 10, '2026-05-25');
 
 -- Projet 12 (Versioning, ACTIVE) — 2 tâches
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
-VALUES (12, 1, 2, '2026-05-22 08:00:00', '2026-05-29 09:00:00', 'Migration vers Git Flow',
-        'Migrer le repository actuel vers la convention Git Flow avec branches feature, develop et main', 'IN_PROGRESS', 'HIGH', '2026-06-10', 1,
-        '["git","versioning","git-flow"]', '{}', 20, 12, '2026-05-22');
+VALUES (12, 1, 2, '2026-05-22 08:00:00', '2026-05-25 11:00:00', 'Migration vers Git Flow',
+        'Migrer le repository actuel vers la convention Git Flow avec branches feature, develop et main', 'DONE', 'HIGH', '2026-06-10', 1,
+        '["git","versioning","git-flow"]', '{}', 20, 18, '2026-05-22');
 
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
-VALUES (12, 1, 4, '2026-05-25 11:00:00', '2026-05-25 11:00:00', 'Configuration GitHub Releases',
-        'Automatiser la création de releases GitHub avec changelog et tags sémantiques', 'TODO', 'MEDIUM', '2026-06-25', 2,
-        '["github","releases","automatisation"]', '{}', 8, NULL, '2026-05-25');
+VALUES (12, 1, 4, '2026-05-25 11:00:00', '2026-05-26 14:00:00', 'Configuration GitHub Releases',
+        'Automatiser la création de releases GitHub avec changelog et tags sémantiques', 'DONE', 'MEDIUM', '2026-06-25', 2,
+        '["github","releases","automatisation"]', '{}', 8, 7, '2026-05-25');
 
 -- Projet 16 (PIPELINE CI-CD, COMPLETED) — 3 tâches terminées
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
@@ -234,9 +254,9 @@ VALUES (17, 2, 2, '2026-05-10 10:00:00', '2026-05-29 10:00:00', 'Intégration Fl
         '["flutter","frontend","mobile","ui"]', '{}', 60, 35, '2026-05-10');
 
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
-VALUES (17, 2, 4, '2026-05-20 11:00:00', '2026-05-20 11:00:00', 'Tests utilisateurs',
-        'Planifier et exécuter les tests utilisateur avec un groupe de beta-testeurs, remonter les bugs', 'TODO', 'MEDIUM', '2026-05-29', 4,
-        '["tests","qa","utilisateurs","recette"]', '{}', 30, NULL, '2026-05-20');
+VALUES (17, 2, 4, '2026-05-20 11:00:00', '2026-05-26 11:00:00', 'Tests utilisateurs',
+        'Planifier et exécuter les tests utilisateur avec un groupe de beta-testeurs, remonter les bugs', 'DONE', 'MEDIUM', '2026-05-29', 4,
+        '["tests","qa","utilisateurs","recette"]', '{}', 30, 25, '2026-05-20');
 
 INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
 VALUES (17, 2, 1, '2026-05-25 14:00:00', '2026-05-25 14:00:00', 'Déploiement Play Store',
@@ -286,9 +306,35 @@ VALUES (20, 3, 2, NOW(), NOW(), 'Proposition migration',
         'Rédiger une proposition détaillée de migration avec planification, estimation des ressources et analyse des risques', 'TODO', 'LOW', 2,
         '["migration","base-de-donnees","planification"]', '{}', 24, NULL);
 
--- ============================================================
--- 7. SOUS-TÂCHES (CHECKLIST_ITEMS)
--- ============================================================
+-- Tâche 21: Chloé — Sprint Planning (Projet App Mobile)
+INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
+VALUES (17, 5, 5, '2026-05-28 08:00:00', '2026-05-28 08:00:00', 'Planning Sprint 2',
+        'Organiser le sprint planning avec l''équipe, définir les user stories et estimer la vélocité', 'TODO', 'HIGH', '2026-06-01', 6,
+        '["agile","sprint","planning","gestion"]', '{}', 8, NULL, '2026-05-28');
+
+-- Tâche 22: Assignée à Paul — Monitoring CloudWatch (Projet Infra AWS)
+INSERT INTO tasks (project_id, created_by_id, assigned_to_id, created_at, updated_at, title, description, status, priority, due_date, item_order, tags, custom_fields, estimated_hours, actual_hours, start_date)
+VALUES (18, 1, 4, '2026-05-20 09:00:00', '2026-05-24 10:00:00', 'Configuration CloudWatch',
+        'Configurer les dashboards CloudWatch et les alarmes pour les métriques critiques CPU, RAM, connexions DB', 'DONE', 'MEDIUM', '2026-06-10', 4,
+        '["aws","cloudwatch","monitoring","alarmes"]', '{}', 16, 14, '2026-05-20');
+
+-- Tâche "Tests utilisateurs" (id=16) — 2 sous-tâches
+INSERT INTO checklist_items (task_id, title, is_completed, item_order)
+VALUES
+  (16, 'Préparer le script de test avec les cas d''utilisation critiques', 1, 1),
+  (16, 'Recruter 5 bêta-testeurs et organiser les sessions', 0, 2);
+
+-- Tâche "Sécurisation IAM" (id=15) — 2 sous-tâches
+INSERT INTO checklist_items (task_id, title, is_completed, item_order)
+VALUES
+  (15, 'Créer les politiques IAM pour les services EC2, RDS, S3', 1, 1),
+  (15, 'Mettre en place MFA pour les utilisateurs administrateurs', 0, 2);
+
+-- Tâche "Configuration CloudWatch" (id=22) — 2 sous-tâches
+INSERT INTO checklist_items (task_id, title, is_completed, item_order)
+VALUES
+  (22, 'Créer les dashboards CloudWatch pour les métriques EC2, RDS', 1, 1),
+  (22, 'Configurer les alarmes avec notifications SNS (CPU > 80%, RAM < 20%)', 0, 2);
 
 -- Tâche "Développement backend API" (id=9) — 3 sous-tâches
 INSERT INTO checklist_items (task_id, title, is_completed, item_order)
@@ -340,6 +386,31 @@ INSERT INTO comments (task_id, author_id, content, created_at, parent_id)
 VALUES
   (9, 1, 'Avec plaisir ! Je te partage le repo ce soir, on pourra pair-programmer demain.', '2026-05-28 10:30:00', 1);
 
+-- Commentaire de Paul sur la tâche "Intégration Flutter"
+INSERT INTO comments (task_id, author_id, content, created_at)
+VALUES
+  (10, 4, 'J''ai commencé à regarder le code. La structure des providers est propre !', '2026-05-28 17:00:00');
+
+-- Commentaire de Jason sur la tâche "Mise en place RDS"
+INSERT INTO comments (task_id, author_id, content, created_at)
+VALUES
+  (14, 2, 'Top ! Pense à configurer les alarmes CloudWatch pour le CPU et la mémoire.', '2026-05-25 14:30:00');
+
+-- Commentaire de Chloé sur la tâche "Planning Sprint 2"
+INSERT INTO comments (task_id, author_id, content, created_at)
+VALUES
+  (21, 5, 'Le sprint planning est prévu pour lundi 9h. Préparez vos estimations !', '2026-05-29 08:30:00');
+
+-- Commentaire de Paul sur la tâche "Configuration CloudWatch"
+INSERT INTO comments (task_id, author_id, content, created_at)
+VALUES
+  (22, 4, 'Les dashboards sont presque prêts. Il me manque les métriques RDS.', '2026-05-29 15:00:00');
+
+-- Réponse de Jason à Paul
+INSERT INTO comments (task_id, author_id, content, created_at, parent_id)
+VALUES
+  (22, 2, 'Regarde dans la console RDS → Monitoring → CloudWatch metrics. Tu peux les ajouter en un clic.', '2026-05-29 16:30:00', 9);
+
 -- ============================================================
 -- 9. NOTIFICATIONS
 -- ============================================================
@@ -366,6 +437,30 @@ VALUES
 INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
 VALUES
   (3, 'Projet assigné', 'Vous avez été nommée Lead du projet "Refonte Base de Données"', 'PROJECT_ASSIGNED', '20', 0, NOW());
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (4, 'Nouveau commentaire', 'Jason a commenté sur "Mise en place RDS" : "Pense à configurer les alarmes CloudWatch..."', 'COMMENT_ADDED', '14', 0, '2026-05-25 14:30:00');
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (1, 'Sous-tâche terminée', 'Sarah a terminé "Préparer le script de test" dans la tâche "Tests utilisateurs"', 'CHECKLIST_COMPLETED', '16', 0, NOW());
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (2, 'Modification projet', 'Yvan a modifié le projet "Application Mobile CollabSME"', 'PROJECT_UPDATED', '17', 1, NOW());
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (5, 'Bienvenue', 'Chloé a rejoint CollabSME Solutions en tant que Chef de projet', 'MEMBER_JOINED', '5', 0, NOW());
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (4, 'Nouveau commentaire', 'Jason a répondu à votre commentaire sur "Configuration CloudWatch"', 'COMMENT_ADDED', '22', 0, '2026-05-29 16:30:00');
+
+INSERT INTO notifications (user_id, title, message, notification_type, related_id, is_read, created_at)
+VALUES
+  (5, 'Sprint planning', 'Rappel : Sprint Planning Session 2 demain à 9h', 'SYSTEM', '21', 0, NOW());
 
 -- ============================================================
 -- 10. ACTIVITY LOGS
@@ -414,5 +509,110 @@ INSERT INTO activity_logs (actor_id, company_id, action_type, target_description
 VALUES
   (2, 1, 'COMMENT_ADDED', 'Jason a commenté sur la tâche "Développement backend API" : "Je peux t''aider sur la sécurité"',
    '{"project_id":"17","task_id":"9","task_name":"Développement backend API","comment_id":"2"}', '2026-05-29 09:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (2, 1, 'CHECKLIST_COMPLETED', 'Sarah a complété une sous-tâche dans "Tests utilisateurs"',
+   '{"project_id":"17","task_id":"16","item_name":"Préparer le script de test"}', NOW());
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'COMMENT_ADDED', 'Paul a commenté sur "Intégration Flutter" : "La structure est propre"',
+   '{"project_id":"17","task_id":"10","task_name":"Intégration Flutter","comment_id":"6"}', '2026-05-28 17:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (1, 1, 'PROJECT_UPDATED', 'Yvan a mis à jour le budget du projet "Infrastructure Cloud AWS"',
+   '{"project_id":"18","project_name":"Infrastructure Cloud AWS","budget":1800000}', NOW());
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (5, 1, 'MEMBER_JOINED', 'Chloé Nkoa a rejoint l''entreprise en tant que Chef de projet',
+   '{"user_id":"5","user_name":"Chloé Nkoa","role":"LEAD"}', NOW());
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (5, 1, 'TASK_CREATED', 'Ajout de la tâche "Planning Sprint 2" dans le projet Application Mobile CollabSME',
+   '{"project_id":"17","task_id":"21","task_name":"Planning Sprint 2","assignee":"Chloé Nkoa"}', '2026-05-28 08:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (1, 1, 'TASK_CREATED', 'Ajout de la tâche "Configuration CloudWatch" dans le projet Infrastructure Cloud AWS',
+   '{"project_id":"18","task_id":"22","task_name":"Configuration CloudWatch","assignee":"Paul Ngassa"}', '2026-05-27 09:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'COMMENT_ADDED', 'Paul a commenté sur "Configuration CloudWatch" : "Les dashboards sont presque prêts"',
+   '{"project_id":"18","task_id":"22","task_name":"Configuration CloudWatch"}', '2026-05-29 15:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (5, 1, 'PROJECT_ASSIGNED', 'Chloé a été nommée Lead du projet "Application Mobile CollabSME"',
+   '{"project_id":"17","project_name":"Application Mobile CollabSME","role":"LEAD","user_id":"5"}', NOW());
+
+-- ============================================================
+-- 11. ACTIVITÉ SUPPLÉMENTAIRE POUR LE GRAPHE (23-30 MAI)
+-- ============================================================
+
+-- May 24 : 3 complétions (workflow CD + CloudWatch + Tests automatisés)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'TASK_COMPLETED', 'Paul a terminé la tâche "Configuration CloudWatch" dans le projet Infrastructure Cloud AWS',
+   '{"project_id":"18","task_id":"22","task_name":"Configuration CloudWatch"}', '2026-05-24 10:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'TASK_COMPLETED', 'Paul a terminé la tâche "Mise en place des tests automatisés" dans le projet Pipeline',
+   '{"project_id":"11","task_id":"2","task_name":"Mise en place des tests automatisés"}', '2026-05-24 16:00:00');
+
+-- May 25 : 2 complétions (GitHub Actions + Git Flow)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (2, 1, 'TASK_COMPLETED', 'Jason a terminé la tâche "Migration vers Git Flow" dans le projet Versioning',
+   '{"project_id":"12","task_id":"3","task_name":"Migration vers Git Flow"}', '2026-05-25 11:00:00');
+
+-- May 26 : 4 complétions (GitHub Releases + Tests utilisateurs + milestones JWT/IAM)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'TASK_COMPLETED', 'Paul a terminé la tâche "Configuration GitHub Releases" dans le projet Versioning',
+   '{"project_id":"12","task_id":"4","task_name":"Configuration GitHub Releases"}', '2026-05-26 14:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'TASK_COMPLETED', 'Paul a terminé la tâche "Tests utilisateurs" dans le projet Application Mobile CollabSME',
+   '{"project_id":"17","task_id":"11","task_name":"Tests utilisateurs"}', '2026-05-26 11:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (1, 1, 'TASK_UPDATED', 'Yvan a marqué le module Authentification JWT comme terminé dans "Développement backend API"',
+   '{"project_id":"17","task_id":"9","task_name":"Développement backend API","status":"DONE"}', '2026-05-26 09:00:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (3, 1, 'TASK_UPDATED', 'Sarah a marqué la politique IAM EC2 comme terminée dans "Sécurisation IAM"',
+   '{"project_id":"18","task_id":"15","task_name":"Sécurisation IAM","status":"DONE"}', '2026-05-26 17:00:00');
+
+-- May 27 : 2 complétions (Documentation pipeline + milestone CloudWatch alarmes)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (4, 1, 'TASK_UPDATED', 'Paul a finalisé la configuration des alarmes CloudWatch pour les métriques CPU et mémoire',
+   '{"project_id":"18","task_id":"22","task_name":"Configuration CloudWatch","status":"DONE"}', '2026-05-27 16:00:00');
+
+-- May 28 : 1 complétion (milestone RDS)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (2, 1, 'TASK_UPDATED', 'Jason a provisionné l''instance RDS PostgreSQL en multi-AZ dans le projet Infrastructure Cloud AWS',
+   '{"project_id":"18","task_id":"14","task_name":"Mise en place RDS","status":"DONE"}', '2026-05-28 15:00:00');
+
+-- May 29 : 3 complétions (VPC + milestone Sprint Planning + milestone Flutter Dashboard)
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (5, 1, 'TASK_UPDATED', 'Chloé a préparé le planning du Sprint 2 avec les user stories priorisées',
+   '{"project_id":"17","task_id":"21","task_name":"Planning Sprint 2","status":"DONE"}', '2026-05-29 08:30:00');
+
+INSERT INTO activity_logs (actor_id, company_id, action_type, target_description, metadata, timestamp)
+VALUES
+  (2, 1, 'TASK_UPDATED', 'Jason a terminé l''écran Dashboard avec les graphiques dynamiques dans "Intégration Flutter"',
+   '{"project_id":"17","task_id":"10","task_name":"Intégration Flutter","status":"DONE"}', '2026-05-29 16:00:00');
 
 COMMIT;

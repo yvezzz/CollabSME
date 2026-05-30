@@ -1,3 +1,5 @@
+import '../../utils/safe_parser.dart';
+
 class ProjectMemberModel {
   final String id;
   final String userId;
@@ -25,7 +27,7 @@ class ProjectMemberModel {
       userFullName: "${json['user_first_name'] ?? ''} ${json['user_last_name'] ?? ''}".trim(),
       userAvatar: json['user_avatar'],
       role: json['role'] ?? 'MEMBER',
-      joinedAt: DateTime.parse(json['joined_at']),
+      joinedAt: SafeParser.parseDateTime(json['joined_at']) ?? DateTime.now(),
     );
   }
 }

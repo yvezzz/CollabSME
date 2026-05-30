@@ -1,3 +1,5 @@
+import '../../utils/safe_parser.dart';
+
 class ActivityLogModel {
   final String id;
   final String actorName;
@@ -24,7 +26,7 @@ class ActivityLogModel {
       actorAvatar: json['actor_avatar'],
       actionType: json['action_type'] ?? 'OTHER',
       description: json['target_description'] ?? '',
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: SafeParser.parseDateTime(json['timestamp']) ?? DateTime.now(),
       metadata: json['metadata'],
     );
   }

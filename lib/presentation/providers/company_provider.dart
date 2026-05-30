@@ -70,7 +70,11 @@ class CompanyMembersNotifier extends StateNotifier<AsyncValue<List<UserModel>>> 
     state = const AsyncValue.loading();
     try {
       final members = await _repository.getMembers();
-      state = AsyncValue.data(members);
+      final uniqueMembers = <String, UserModel>{};
+      for (final member in members) {
+        uniqueMembers[member.id] = member;
+      }
+      state = AsyncValue.data(uniqueMembers.values.toList());
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }

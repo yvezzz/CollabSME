@@ -8,4 +8,5 @@ import java.util.List;
 public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
     List<Attachment> findByTask(Task task);
     long countByTask(Task task);
+    void deleteByTaskId(Long taskId);
 }

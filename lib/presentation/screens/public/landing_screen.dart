@@ -78,7 +78,7 @@ class _LandingScreenState extends State<LandingScreen> {
               if (isWide) ...[
                 const Spacer(),
                 _navButton("Fonctionnalités", () => Navigator.pushNamed(context, Routes.features)),
-                _navButton("Avis", () {}),
+                _navButton("Avis", () => Navigator.pushNamed(context, Routes.contact)),
                 _navButton("Contact", () => Navigator.pushNamed(context, Routes.contact)),
                 const SizedBox(width: 8),
                 OutlinedButton(

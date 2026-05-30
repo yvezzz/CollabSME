@@ -64,9 +64,9 @@ class AIChatNotifier extends StateNotifier<AIChatState> {
       }
 
       final messages = history.map((m) => AIChatMessage(
-        text: m['text'],
-        isUser: m['is_user'],
-        timestamp: DateTime.parse(m['timestamp']),
+        text: m['content'] ?? '',
+        isUser: m['role'] == 'user',
+        timestamp: m['created_at'] != null ? DateTime.parse(m['created_at']) : DateTime.now(),
       )).toList();
 
       state = state.copyWith(

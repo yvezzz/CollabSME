@@ -1,21 +1,18 @@
-import 'dart:convert';
-import '../models/project_member_model.dart';
 import '../../core/network/api_client.dart';
+import '../../utils/safe_parser.dart';
+import '../models/project_member_model.dart';
 
 class ProjectMemberRepository {
-  /// Liste les membres d'un projet spécifique
   Future<List<ProjectMemberModel>> getProjectMembers(String projectId) async {
     final response = await ApiClient.get('projects/$projectId/members/');
-
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.map((json) => ProjectMemberModel.fromJson(json)).toList();
-    } else {
-      throw Exception("Erreur lors de la récupération des membres");
+      final decoded = SafeParser.safeDecodeList(response.body);
+      if (decoded == null) return [];
+      return decoded.whereType<Map<String, dynamic>>().map((json) => ProjectMemberModel.fromJson(json)).toList();
     }
+    throw Exception("Erreur lors de la récupération des membres (${response.statusCode})");
   }
 
-  /// Ajoute un membre à un projet
   Future<void> addMember({
     required String projectId,
     required String userId,
@@ -25,34 +22,25 @@ class ProjectMemberRepository {
       'user': userId,
       'role': role,
     });
-
     if (response.statusCode != 201) {
-      throw Exception("Impossible d'ajouter le membre");
+      throw Exception("Impossible d'ajouter le membre (${response.statusCode})");
     }
   }
 
-  /// Retire un membre du projet
   Future<void> removeMember(String projectId, String memberId) async {
-    final response = await ApiClient.delete(
-      'projects/$projectId/members/$memberId/',
-    );
-    if (response.statusCode != 204) {
-      throw Exception("Erreur lors du retrait du membre");
+    final response = await ApiClient.delete('projects/$projectId/members/$memberId/');
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      throw Exception("Erreur lors du retrait du membre (${response.statusCode})");
     }
   }
 
-  /// Change le rôle d'un membre
-  Future<void> updateMemberRole(
-    String projectId,
-    String memberId,
-    String role,
-  ) async {
+  Future<void> updateMemberRole(String projectId, String memberId, String role) async {
     final response = await ApiClient.patch(
       'projects/$projectId/members/$memberId/',
       {'role': role},
     );
     if (response.statusCode != 200) {
-      throw Exception("Erreur lors du changement de rôle");
+      throw Exception("Erreur lors du changement de rôle (${response.statusCode})");
     }
   }
 }

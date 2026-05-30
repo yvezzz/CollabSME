@@ -61,13 +61,9 @@ class TaskModel {
       priority: json['priority'] ?? 'MEDIUM',
       assignedTo: json['assigned_to']?.toString(),
       assignedToName: json['assigned_to_name']?.toString(),
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      dueDate: json['due_date'] != null
-          ? DateTime.parse(json['due_date'])
-          : null,
-      startDate: json['start_date'] != null
-          ? DateTime.parse(json['start_date'])
-          : null,
+      createdAt: SafeParser.parseDateTime(json['created_at']) ?? DateTime.now(),
+      dueDate: SafeParser.parseDateTime(json['due_date']),
+      startDate: SafeParser.parseDateTime(json['start_date']),
       estimatedHours: json['estimated_hours'] != null
           ? double.tryParse(json['estimated_hours'].toString())
           : null,
@@ -150,8 +146,8 @@ class SubTaskModel {
     return SubTaskModel(
       id: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
-      isCompleted: json['is_completed'] ?? false,
-      order: json['order'] ?? 0,
+      isCompleted: json['is_completed'] == true,
+      order: json['order'] is int ? json['order'] as int : int.tryParse(json['order']?.toString() ?? '0') ?? 0,
     );
   }
 }
@@ -180,12 +176,12 @@ class CommentModel {
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
       id: json['id']?.toString() ?? '',
-      parent: json['parent'],
+      parent: json['parent']?.toString(),
       content: json['content'] ?? '',
       authorName: json['author_name'] ?? 'Inconnu',
-      mentions: List<String>.from(json['mentions'] ?? []),
+      mentions: json['mentions'] is List ? (json['mentions'] as List).map((e) => e.toString()).toList() : <String>[],
       reactions: json['reactions'] ?? {},
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
+      createdAt: SafeParser.parseDateTime(json['created_at']) ?? DateTime.now(),
       replies: (json['replies'] as List? ?? [])
           .map((r) => CommentModel.fromJson(r))
           .toList(),

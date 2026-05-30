@@ -1,45 +1,39 @@
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../models/task_model.dart';
 import '../../core/network/api_client.dart';
+import '../../utils/safe_parser.dart';
 
 class TaskRepository {
-  /// Lister les tâches d'un projet spécifique
   Future<List<TaskModel>> getTasks(String projectId) async {
     final response = await ApiClient.get('projects/$projectId/tasks/');
-
     if (response.statusCode == 200) {
-      final dynamic decoded = jsonDecode(response.body);
+      final decoded = SafeParser.safeJsonDecode(response.body);
       final List data = decoded is Map ? (decoded['content'] is List ? decoded['content'] : []) : (decoded is List ? decoded : []);
-      return data.map((json) => TaskModel.fromJson(json)).toList();
-    } else {
-      throw Exception("Erreur lors de la récupération des tâches");
+      return data.map((json) => json is Map<String, dynamic> ? TaskModel.fromJson(json) : TaskModel.fromJson({})).toList();
     }
+    throw Exception("Erreur lors de la récupération des tâches (${response.statusCode})");
   }
 
-  /// Récupérer les tâches assignées à l'utilisateur actuel
   Future<List<TaskModel>> getUserTasks() async {
     final response = await ApiClient.get('tasks/my-tasks/');
     if (response.statusCode == 200) {
-      final dynamic decoded = jsonDecode(response.body);
+      final decoded = SafeParser.safeJsonDecode(response.body);
       final List data = decoded is Map ? (decoded['content'] is List ? decoded['content'] : []) : (decoded is List ? decoded : []);
-      return data.map((json) => TaskModel.fromJson(json)).toList();
-    } else {
-      throw Exception("Erreur lors de la récupération de mes tâches");
+      return data.map((json) => json is Map<String, dynamic> ? TaskModel.fromJson(json) : TaskModel.fromJson({})).toList();
     }
+    throw Exception("Erreur lors de la récupération de mes tâches (${response.statusCode})");
   }
 
-  /// Créer une tâche
   Future<TaskModel> createTask(String projectId, Map<String, dynamic> data) async {
     final response = await ApiClient.post('projects/$projectId/tasks/', data);
     if (response.statusCode == 201) {
-      return TaskModel.fromJson(jsonDecode(response.body));
+      final json = SafeParser.safeDecodeMap(response.body) ?? {};
+      return TaskModel.fromJson(json);
     }
     throw Exception("Impossible de créer la tâche (${response.statusCode})");
   }
 
-  /// Met à jour le statut via l'action dédiée (assigné / lead)
   Future<void> updateTaskStatus(String projectId, String taskId, String newStatus) async {
     final response = await ApiClient.patch(
       'projects/$projectId/tasks/$taskId/status/',
@@ -50,36 +44,25 @@ class TaskRepository {
     }
   }
 
-  /// Réordonnancement Kanban (même colonne ou autre) — aligné sur le backend Spring Boot
-  Future<void> reorderTask(
-    String projectId,
-    String taskId,
-    String newStatus,
-    int newOrder,
-  ) async {
+  Future<void> reorderTask(String projectId, String taskId, String newStatus, int newOrder) async {
     final response = await ApiClient.patch(
       'projects/$projectId/tasks/reorder/',
-      {
-        'task_id': taskId,
-        'new_status': newStatus,
-        'new_order': newOrder,
-      },
+      {'task_id': taskId, 'new_status': newStatus, 'new_order': newOrder},
     );
     if (response.statusCode != 200) {
       throw Exception("Erreur réordonnancement (${response.statusCode})");
     }
   }
 
-  /// Récupérer une tâche unique avec tous les détails (commentaires, sous-tâches, pièces jointes)
   Future<TaskModel> getTask(String projectId, String taskId) async {
     final response = await ApiClient.get('projects/$projectId/tasks/$taskId/');
     if (response.statusCode == 200) {
-      return TaskModel.fromJson(jsonDecode(response.body));
+      final json = SafeParser.safeDecodeMap(response.body) ?? {};
+      return TaskModel.fromJson(json);
     }
     throw Exception("Erreur lors du chargement de la tâche (${response.statusCode})");
   }
 
-  /// Ajouter un commentaire (route imbriquée projet → tâche)
   Future<void> addComment(String projectId, String taskId, String content) async {
     final response = await ApiClient.post(
       'projects/$projectId/tasks/$taskId/comments/',
@@ -90,7 +73,6 @@ class TaskRepository {
     }
   }
 
-  /// Créer une sous-tâche (checklist)
   Future<void> createSubtask(String projectId, String taskId, String title) async {
     final response = await ApiClient.post(
       'projects/$projectId/tasks/$taskId/subtasks/',
@@ -101,7 +83,6 @@ class TaskRepository {
     }
   }
 
-  /// Uploader une pièce jointe
   Future<Map<String, dynamic>> uploadAttachment(String projectId, String taskId, String filePath, String fileName) async {
     final file = await http.MultipartFile.fromPath('file', filePath, filename: fileName);
     final response = await ApiClient.postMultipart(
@@ -109,18 +90,12 @@ class TaskRepository {
       files: [file],
     );
     if (response.statusCode == 201) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
+      return SafeParser.parseJsonMap(response.body);
     }
     throw Exception("Erreur lors de l'upload (${response.statusCode})");
   }
 
-  /// Mettre à jour une sous-tâche (checklist)
-  Future<void> patchSubtaskChecklist(
-    String projectId,
-    String taskId,
-    String subTaskId, {
-    required bool isCompleted,
-  }) async {
+  Future<void> patchSubtaskChecklist(String projectId, String taskId, String subTaskId, {required bool isCompleted}) async {
     final response = await ApiClient.patch(
       'projects/$projectId/tasks/$taskId/subtasks/$subTaskId/',
       {'is_completed': isCompleted},
@@ -130,13 +105,29 @@ class TaskRepository {
     }
   }
 
-  /// Récupérer les stats d'activité (tâches finies)
+  Future<TaskModel> updateTask(String projectId, String taskId, Map<String, dynamic> data) async {
+    final response = await ApiClient.put('projects/$projectId/tasks/$taskId/', data);
+    if (response.statusCode == 200) {
+      final json = SafeParser.safeDecodeMap(response.body) ?? {};
+      return TaskModel.fromJson(json);
+    }
+    throw Exception("Impossible de modifier la tâche (${response.statusCode})");
+  }
+
+  Future<void> deleteTask(String projectId, String taskId) async {
+    final response = await ApiClient.delete('projects/$projectId/tasks/$taskId/');
+    if (response.statusCode != 200 && response.statusCode != 204) {
+      throw Exception("Impossible de supprimer la tâche (${response.statusCode})");
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getActivityStats() async {
     final response = await ApiClient.get('tasks/activity/');
     if (response.statusCode == 200) {
-      final List data = jsonDecode(response.body);
-      return data.cast<Map<String, dynamic>>();
+      final decoded = SafeParser.safeDecodeList(response.body);
+      if (decoded == null) return [];
+      return decoded.whereType<Map<String, dynamic>>().toList();
     }
-    throw Exception("Impossible de charger les statistiques d'activité");
+    throw Exception("Impossible de charger les statistiques d'activité (${response.statusCode})");
   }
 }

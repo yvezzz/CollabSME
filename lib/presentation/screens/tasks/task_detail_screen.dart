@@ -4,7 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../providers/task_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/network/route_helper.dart';
 import '../../../data/models/task_model.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../presentation/widgets/app_toast.dart';
@@ -30,6 +32,12 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
   bool _loading = true;
   String? _error;
 
+  bool get _canEdit {
+    final user = ref.read(authStateProvider).value;
+    if (user == null) return false;
+    return user.isCompanyAdmin || user.role == 'LEAD';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -44,6 +52,48 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
       if (mounted) setState(() { _task = task; _loading = false; });
     } catch (e) {
       if (mounted) setState(() { _error = '$e'; _loading = false; });
+    }
+  }
+
+  Future<void> _navigateToEdit() async {
+    final result = await Navigator.pushNamed(
+      context,
+      '${Routes.taskEdit}/${widget.projectId}/${widget.taskId}',
+      arguments: {'task': _task},
+    );
+    if (result == true && mounted) _loadTask();
+  }
+
+  Future<void> _confirmDelete() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: const Text("Supprimer la tâche", style: TextStyle(color: AppColors.danger)),
+        content: const Text("Cette action est irréversible. La tâche et toutes ses données associées seront supprimées."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger, foregroundColor: Colors.white),
+            child: const Text("Supprimer"),
+          ),
+        ],
+      ),
+    );
+    if (confirm != true) return;
+    try {
+      final repo = ref.read(taskRepositoryProvider);
+      await repo.deleteTask(widget.projectId, widget.taskId);
+      if (mounted) {
+        AppToast.show(context, message: "Tâche supprimée", type: ToastType.success);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) AppToast.show(context, message: "Erreur : $e", type: ToastType.error);
     }
   }
 
@@ -120,6 +170,18 @@ class _TaskDetailScreenState extends ConsumerState<TaskDetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         actions: [
+          if (_task != null && _canEdit) ...[
+            IconButton(
+              icon: const Icon(LucideIcons.pencil, size: 18),
+              tooltip: 'Modifier',
+              onPressed: _navigateToEdit,
+            ),
+            IconButton(
+              icon: const Icon(LucideIcons.trash2, size: 18, color: AppColors.danger),
+              tooltip: 'Supprimer',
+              onPressed: _confirmDelete,
+            ),
+          ],
           if (_task != null)
             Padding(
               padding: const EdgeInsets.only(right: 12),

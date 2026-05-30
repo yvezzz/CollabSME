@@ -1,29 +1,25 @@
-import 'dart:convert';
-import '../models/activity_log_model.dart';
 import '../../core/network/api_client.dart';
+import '../../utils/safe_parser.dart';
+import '../models/activity_log_model.dart';
 
 class ActivityLogRepository {
-  /// Récupérer l'historique d'un projet
   Future<List<ActivityLogModel>> getProjectActivity(String projectId) async {
     final response = await ApiClient.get('activity/?project_id=$projectId');
-
     if (response.statusCode == 200) {
-      final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
-      return data.map((json) => ActivityLogModel.fromJson(json)).toList();
-    } else {
-      throw Exception("Erreur lors de la récupération de l'historique");
+      final decoded = SafeParser.safeJsonDecode(response.body);
+      final List data = decoded is Map ? (decoded['content'] ?? []) : (decoded is List ? decoded : []);
+      return data.whereType<Map<String, dynamic>>().map((json) => ActivityLogModel.fromJson(json)).toList();
     }
+    throw Exception("Erreur chargement activité (${response.statusCode})");
   }
 
-  /// Récupérer l'activité globale de l'entreprise (Admin)
-  Future<List<ActivityLogModel>> getCompanyActivity() async {
-    final response = await ApiClient.get('activity/');
+  Future<List<ActivityLogModel>> getAllActivity({int page = 0}) async {
+    final response = await ApiClient.get('activity/?page=$page');
     if (response.statusCode == 200) {
-      final dynamic decoded = jsonDecode(response.body);
-      final List data = decoded is Map ? (decoded['results'] ?? []) : decoded;
-      return data.map((json) => ActivityLogModel.fromJson(json)).toList();
+      final decoded = SafeParser.safeJsonDecode(response.body);
+      final List data = decoded is Map ? (decoded['content'] ?? []) : (decoded is List ? decoded : []);
+      return data.whereType<Map<String, dynamic>>().map((json) => ActivityLogModel.fromJson(json)).toList();
     }
-    throw Exception("Erreur lors de la récupération de l'activité");
+    throw Exception("Erreur chargement activité (${response.statusCode})");
   }
 }

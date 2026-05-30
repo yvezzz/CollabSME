@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -8,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/route_helper.dart';
+import '../../../utils/safe_parser.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -36,11 +36,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     try {
       final resp = await ApiClient.get('tasks/my-tasks/');
       if (resp.statusCode == 200) {
-        final List tasks = jsonDecode(resp.body);
+        final decoded = SafeParser.safeDecodeList(resp.body);
+        if (decoded == null) {
+          setState(() => _isLoading = false);
+          return;
+        }
         final grouped = <DateTime, List<Map<String, dynamic>>>{};
-        for (final t in tasks) {
-          final date = t['due_date'] as String?;
-          if (date == null) continue;
+        for (final t in decoded) {
+          if (t is! Map) continue;
+          final date = SafeParser.parseString(t['due_date']);
+          if (date.isEmpty) continue;
           final parsed = DateTime.tryParse(date);
           if (parsed == null) continue;
           final dayKey = DateTime(parsed.year, parsed.month, parsed.day);
@@ -48,7 +53,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         }
         setState(() => _tasksByDay = grouped);
       }
-    } catch (_) {}
+    } catch (_) {
+      // ignore calendar load errors — shows empty state
+    }
     setState(() => _isLoading = false);
   }
 
@@ -197,9 +204,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
                     leading: _statusIcon(t['status'] ?? ''),
-                    title: Text(t['title'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(t['project_title'] ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                    trailing: _priorityBadge(t['priority'] ?? ''),
+                    title: Text(t['title']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(t['project_title']?.toString() ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    trailing: _priorityBadge(t['priority']?.toString() ?? ''),
                     onTap: () => Navigator.pushNamed(context, '${Routes.taskDetail}/${t['project']}/${t['id']}'),
                   ),
                 );

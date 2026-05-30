@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../../utils/safe_parser.dart';
 
 class ProjectModel {
   final String id;
@@ -36,40 +36,23 @@ class ProjectModel {
   });
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
-    List<String> parseTags(dynamic t) {
-      if (t is List) return List<String>.from(t);
-      if (t is String && t.isNotEmpty) {
-        final parsed = jsonDecode(t);
-        if (parsed is List) return List<String>.from(parsed);
-      }
-      return [];
-    }
-
-    Map<String, dynamic> parseCustomFields(dynamic cf) {
-      if (cf is Map) return Map<String, dynamic>.from(cf);
-      if (cf is String && cf.isNotEmpty) {
-        final parsed = jsonDecode(cf);
-        if (parsed is Map) return Map<String, dynamic>.from(parsed);
-      }
-      return {};
-    }
 
     return ProjectModel(
-      id: json['id']?.toString() ?? (throw FormatException('Missing project id')),
+      id: json['id']?.toString() ?? '',
       key: json['key'],
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       status: json['status'] ?? 'PLANNING',
       priority: json['priority'] ?? 'MEDIUM',
-      progress: (json['task_completion_percentage'] ?? 0.0).toDouble() / 100.0,
+      progress: SafeParser.parseDouble(json['task_completion_percentage']) / 100.0,
       memberCount: json['member_count'] ?? 0,
       budget: json['budget'] != null ? double.tryParse(json['budget'].toString()) : null,
       actualCost: double.tryParse(json['actual_cost']?.toString() ?? '0') ?? 0.0,
-      tags: parseTags(json['tags']),
-      customFields: parseCustomFields(json['custom_fields']),
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
-      startDate: json['start_date'] != null ? DateTime.parse(json['start_date']) : null,
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      tags: SafeParser.parseJsonList(json['tags']),
+      customFields: SafeParser.parseJsonMap(json['custom_fields']),
+      createdAt: SafeParser.parseDateTime(json['created_at']) ?? DateTime.now(),
+      startDate: SafeParser.parseDateTime(json['start_date']),
+      endDate: SafeParser.parseDateTime(json['end_date']),
     );
   }
 

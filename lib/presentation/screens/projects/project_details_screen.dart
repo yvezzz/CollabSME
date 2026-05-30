@@ -10,11 +10,10 @@ import 'package:collabsme/widgets/glass_container.dart';
 import 'package:collabsme/data/models/task_model.dart';
 import 'package:collabsme/presentation/providers/project_provider.dart';
 import 'package:collabsme/data/models/project_model.dart';
-import 'package:collabsme/data/repositories/ai_repository.dart';
 import 'package:collabsme/presentation/widgets/app_toast.dart';
+import 'package:collabsme/presentation/widgets/ai_chat_panel.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/status_badge.dart';
-import 'project_edit_dialog.dart';
 
 /// Vue détaillée d'un projet incluant le tableau Kanban et l'assistant IA.
 class ProjectDetailsScreen extends ConsumerStatefulWidget {
@@ -27,79 +26,9 @@ class ProjectDetailsScreen extends ConsumerStatefulWidget {
 }
 
 class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
-  // Contrôleur pour le chat de l'IA
-  final _aiController = TextEditingController();
-
-  // Liste des messages du chat
-  final List<Map<String, dynamic>> _messages = [];
-
   @override
   void initState() {
     super.initState();
-    Future.microtask(_loadChatHistory);
-  }
-
-  Future<void> _loadChatHistory() async {
-    try {
-      final history = await ref.read(aiRepositoryProvider).getChatHistory();
-      if (mounted) {
-        setState(() {
-          _messages.addAll(history.map((msg) => {
-            "text": msg['message'] ?? msg['response'] ?? '',
-            "isAI": msg['role'] == 'assistant' || msg['is_ai'] == true,
-          }));
-          if (_messages.isEmpty) {
-            _messages.add({
-              "text": "Bonjour ! Je suis votre assistant CollabSME. Comment puis-je vous aider aujourd'hui ?",
-              "isAI": true,
-            });
-          }
-        });
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _messages.add({
-            "text": "Bonjour ! Je suis votre assistant CollabSME. Comment puis-je vous aider aujourd'hui ?",
-            "isAI": true,
-          });
-        });
-      }
-    }
-  }
-
-  Future<void> _sendMessage() async {
-    final text = _aiController.text.trim();
-    if (text.isEmpty) return;
-
-    setState(() {
-      _messages.add({"text": text, "isAI": false});
-      _aiController.clear();
-    });
-
-    try {
-      final response = await ref.read(aiRepositoryProvider).chat(text);
-      if (mounted) {
-        setState(() {
-          _messages.add({"text": response, "isAI": true});
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _messages.add({
-            "text": "Désolé, je rencontre une difficulté technique : $e",
-            "isAI": true,
-          });
-        });
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _aiController.dispose();
-    super.dispose();
   }
 
   @override
@@ -121,7 +50,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
             : null,
         floatingActionButton: isMobile && canCreate
             ? FloatingActionButton(
-                onPressed: _handleAddTask,
+                onPressed: () => _handleAddTask(),
                 backgroundColor: AppColors.primary,
                 child: const Icon(LucideIcons.plus, color: Colors.white),
               )
@@ -141,7 +70,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                     IconButton(
                       icon: const Icon(LucideIcons.plus, size: 20),
                       tooltip: "Ajouter une tâche",
-                      onPressed: _handleAddTask,
+                      onPressed: () => _handleAddTask(),
                     ),
                   StatusBadge(status: project.status),
                   const SizedBox(width: 4),
@@ -223,7 +152,12 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-            Expanded(child: _buildAIAssistant(isMobile: true)),
+            Expanded(
+              child: AIChatPanel(
+                showHeader: false,
+                showClearButton: true,
+              ),
+            ),
           ],
         ),
       ),
@@ -410,29 +344,17 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   }
 
   Future<void> _handleAddTask() async {
-    final result = await Navigator.of(context).pushNamed<Map<String, dynamic>>(
-      '${Routes.taskCreate}/${widget.projectId}',
-    );
-    if (result != null && mounted) {
-      try {
-        await ref
-            .read(taskListProvider(widget.projectId).notifier)
-            .createTaskInColumn(
-              title: result['title'],
-              description: result['description'] ?? '',
-              status: 'TODO',
-              assignedTo: result['assigned_to'],
-              priority: result['priority'] ?? 'MEDIUM',
-              dueDate: result['due_date'],
-            );
-        if (mounted) {
-          AppToast.show(context, message: "Tâche créée", type: ToastType.success);
-        }
-      } catch (e) {
-        if (mounted) {
-          AppToast.show(context, message: "Erreur : $e", type: ToastType.error);
-        }
+    try {
+      final result = await Navigator.pushNamed(
+        context,
+        '${Routes.taskCreate}/${widget.projectId}',
+        arguments: 'TODO',
+      );
+      if (result != null && mounted) {
+        ref.invalidate(taskListProvider(widget.projectId));
       }
+    } catch (e) {
+      debugPrint("_handleAddTask error: $e");
     }
   }
 
@@ -443,10 +365,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
   void _showEditDialog() {
     final projectAsync = ref.read(singleProjectProvider(widget.projectId));
     projectAsync.whenData((project) {
-      showDialog(
-        context: context,
-        builder: (_) => ProjectEditDialog(project: project),
-      );
+      Navigator.pushNamed(context, '${Routes.projectEdit}/', arguments: project);
     });
   }
 
@@ -686,6 +605,7 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
     return Container(
       width: 320,
       margin: const EdgeInsets.only(right: 24),
+      height: double.infinity,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -713,7 +633,11 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          ...tasks.map((task) => _buildTaskCard(task)),
+          Expanded(
+            child: ListView(
+              children: tasks.map((task) => _buildTaskCard(task)).toList(),
+            ),
+          ),
         ],
       ),
     );
@@ -836,136 +760,9 @@ class _ProjectDetailsScreenState extends ConsumerState<ProjectDetailsScreen> {
                 left: BorderSide(color: Colors.white.withValues(alpha: 0.05)),
               ),
       ),
-      child: Column(
-        children: [
-          _aiAssistantHeader(),
-          Expanded(child: _aiChatList()),
-          _aiChatInput(),
-        ],
-      ),
-    );
-  }
-
-  Widget _aiAssistantHeader() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              LucideIcons.sparkles,
-              color: Colors.white,
-              size: 16,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "Assistant IA CollabSME",
-              style: GoogleFonts.outfit(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-              softWrap: true,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _aiChatList() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(24),
-      itemCount: _messages.length,
-      itemBuilder: (context, index) {
-        final msg = _messages[index];
-        return _aiMessage(msg["text"], isAI: msg["isAI"]);
-      },
-    );
-  }
-
-  Widget _aiMessage(String text, {required bool isAI}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isAI)
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: AppColors.primary,
-              child: Icon(LucideIcons.sparkles, size: 12, color: Colors.white),
-            ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isAI
-                    ? AppColors.card
-                    : AppColors.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                text,
-                style: TextStyle(
-                  color: isAI ? AppColors.textSecondary : Colors.white,
-                ),
-              ),
-            ),
-          ),
-          if (!isAI) const SizedBox(width: 12),
-          if (!isAI)
-            const CircleAvatar(
-              radius: 14,
-              backgroundColor: Colors.purple,
-              child: Icon(LucideIcons.user, size: 12, color: Colors.white),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _aiChatInput() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: GlassContainer(
-        borderRadius: 12,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _aiController,
-                  onSubmitted: (_) => _sendMessage(),
-                  decoration: const InputDecoration(
-                    hintText: "Demander à l'IA...",
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ),
-              IconButton(
-                onPressed: _sendMessage,
-                icon: const Icon(
-                  LucideIcons.send,
-                  size: 18,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-        ),
+      child: AIChatPanel(
+        showHeader: false,
+        showClearButton: true,
       ),
     );
   }

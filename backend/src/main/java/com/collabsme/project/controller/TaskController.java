@@ -93,6 +93,25 @@ public class TaskController {
         return ResponseEntity.ok(Map.of("status", task.getStatus().name()));
     }
 
+    // Full task update (PUT) — title, description, priority, assigned_to, due_date, status
+    @PutMapping("/api/projects/{pk:[0-9]+}/tasks/{taskPk:[0-9]+}/")
+    public ResponseEntity<Map<String, Object>> updateTask(@AuthenticationPrincipal User user,
+                                                           @PathVariable Long pk, @PathVariable Long taskPk,
+                                                           @RequestBody Map<String, Object> body) {
+        Project project = projectService.getProject(pk, user.getCompany());
+        Task task = taskService.updateTask(project, taskPk, body, user);
+        return ResponseEntity.ok(toTaskMap(task));
+    }
+
+    // Delete task
+    @DeleteMapping("/api/projects/{pk:[0-9]+}/tasks/{taskPk:[0-9]+}/")
+    public ResponseEntity<Map<String, String>> deleteTask(@AuthenticationPrincipal User user,
+                                                           @PathVariable Long pk, @PathVariable Long taskPk) {
+        Project project = projectService.getProject(pk, user.getCompany());
+        taskService.deleteTask(project, taskPk, user);
+        return ResponseEntity.ok(Map.of("message", "Tâche supprimée"));
+    }
+
     @PatchMapping("/api/projects/{pk:[0-9]+}/tasks/reorder/")
     public ResponseEntity<Map<String, Object>> reorderTask(@AuthenticationPrincipal User user,
                                                             @PathVariable Long pk,

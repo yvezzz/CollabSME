@@ -20,7 +20,7 @@ import '../../../data/models/user_model.dart';
 import '../../../data/models/dashboard_stats.dart';
 import '../../widgets/project_activity_chart.dart';
 import '../../widgets/app_toast.dart';
-import '../projects/project_edit_dialog.dart';
+
 import 'reports_screen.dart';
 import 'company_settings_screen.dart';
 import 'global_search_delegate.dart';
@@ -631,10 +631,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void _showEditDialog(String projectId) {
     final projectAsync = ref.read(singleProjectProvider(projectId));
     projectAsync.whenData((project) {
-      showDialog(
-        context: context,
-        builder: (_) => ProjectEditDialog(project: project),
-      );
+      Navigator.pushNamed(context, '${Routes.projectEdit}/', arguments: project);
     });
   }
 

@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../utils/safe_parser.dart';
 import '../../../widgets/glass_container.dart';
 import '../../providers/company_provider.dart';
 import '../../providers/auth_provider.dart';
@@ -34,122 +35,65 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
     final horizontalPadding = screenWidth < 600 ? 16.0 : 32.0;
     final crossAxisCount = screenWidth > 1200 ? 4 : (screenWidth > 600 ? 2 : 1);
 
-    return Padding(
-      padding: EdgeInsets.all(horizontalPadding),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(context, ref, isAdmin),
-          const SizedBox(height: 24),
-          // Section des invitations en attente
-          if (isAdmin) const _PendingInvitationsPanel(),
-          if (isAdmin) const SizedBox(height: 24),
-          Expanded(
-            child: membersAsync.when(
-              data: (members) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(companyMembersProvider);
-                },
-                child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: screenWidth < 600 ? 1.6 : 1.3,
-                  ),
-                  itemCount: members.length,
-                  itemBuilder: (context, index) => _buildMemberCard(
-                    context,
-                    index,
-                    members[index],
-                    isAdmin,
-                    currentUser?.id,
-                    ref,
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.surface,
+        title: Text(
+          "Équipe",
+          style: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          if (isAdmin)
+            IconButton(
+              icon: const Icon(LucideIcons.userPlus),
+              tooltip: "Inviter",
+              onPressed: () => _showInviteDialog(context, ref),
+            ),
+        ],
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(horizontalPadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (isAdmin) const _PendingInvitationsPanel(),
+            if (isAdmin) const SizedBox(height: 24),
+            Expanded(
+              child: membersAsync.when(
+                data: (members) => RefreshIndicator(
+                  onRefresh: () async {
+                    ref.invalidate(companyMembersProvider);
+                  },
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: screenWidth < 600 ? 1.6 : 1.3,
+                    ),
+                    itemCount: members.length,
+                    itemBuilder: (context, index) => _buildMemberCard(
+                      context,
+                      index,
+                      members[index],
+                      isAdmin,
+                      currentUser?.id,
+                      ref,
+                    ),
                   ),
                 ),
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (e, s) => Center(child: Text("Erreur: $e")),
               ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, s) => Center(child: Text("Erreur: $e")),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isAdmin) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final inviteButton = isAdmin
-            ? ElevatedButton.icon(
-                onPressed: () => _showInviteDialog(context, ref),
-                icon: const Icon(LucideIcons.userPlus, size: 18),
-                label: const Text("Inviter"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              )
-            : const SizedBox.shrink();
 
-        if (constraints.maxWidth < 400) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Équipe",
-                style: GoogleFonts.outfit(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                "Gérez les membres de votre organisation et leurs rôles.",
-                style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
-              ),
-              if (isAdmin) ...[
-                const SizedBox(height: 16),
-                SizedBox(width: double.infinity, child: inviteButton),
-              ],
-            ],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Équipe",
-                    style: GoogleFonts.outfit(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Gérez les membres de votre organisation et leurs rôles.",
-                    style: TextStyle(color: AppColors.textSecondary),
-                    softWrap: true,
-                  ),
-                ],
-              ),
-            ),
-            if (isAdmin) ...[const SizedBox(width: 16), inviteButton],
-          ],
-        );
-      },
-    );
-  }
 
   void _showInviteDialog(BuildContext context, WidgetRef ref) {
     final emailController = TextEditingController();
@@ -198,7 +142,7 @@ class _TeamScreenState extends ConsumerState<TeamScreen> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  value: selectedRole,
+                  initialValue: selectedRole,
                   dropdownColor: AppColors.surface,
                   style: const TextStyle(color: Colors.white),
                   decoration: const InputDecoration(
@@ -586,11 +530,14 @@ class _PendingInvitationsPanel extends ConsumerWidget {
               style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.warning),
             ),
             const SizedBox(height: 8),
-            ...invites.map((invite) {
+            ...invites.where((invite) {
+              final email = invite['email'] ?? invite['email_address'] ?? '';
+              return email.isNotEmpty;
+            }).map((invite) {
               final email = invite['email'] ?? invite['email_address'] ?? '';
               final id = invite['id']?.toString() ?? '';
               final createdAt = invite['created_at'] != null
-                  ? DateFormat('dd/MM/yyyy').format(DateTime.parse(invite['created_at']))
+                  ? DateFormat('dd/MM/yyyy').format(SafeParser.parseDateTime(invite['created_at']) ?? DateTime.now())
                   : '';
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8),

@@ -1,10 +1,10 @@
-import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
+import '../../../utils/safe_parser.dart';
 import '../../widgets/glass_container.dart';
 
 class ProjectActivityChart extends StatefulWidget {
@@ -32,22 +32,29 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
         setState(() => _isLoading = false);
         return;
       }
-      final List entries = jsonDecode(resp.body);
+      final decoded = SafeParser.safeDecodeList(resp.body);
+      if (decoded == null) {
+        setState(() => _isLoading = false);
+        return;
+      }
+      final entries = decoded.whereType<Map<String, dynamic>>().toList();
       final now = DateTime.now();
       final days = List.generate(7, (i) => DateFormat('d/M').format(now.subtract(Duration(days: 6 - i))));
       final dateStrs = List.generate(7, (i) => DateFormat('yyyy-MM-dd').format(now.subtract(Duration(days: 6 - i))));
       final counts = <int>[0, 0, 0, 0, 0, 0, 0];
       for (final e in entries) {
-        final type = e['action_type'] as String?;
-        final desc = e['target_description'] as String? ?? '';
-        final ts = e['timestamp'] as String?;
+        final type = SafeParser.parseString(e['action_type']);
+        final desc = SafeParser.parseString(e['target_description']);
+        final ts = e['timestamp']?.toString();
         if (ts == null) continue;
         if (type == 'TASK_COMPLETED') { /* ok */ }
         else if (type == 'TASK_UPDATED' && (desc.contains(': DONE') || desc.contains('à DONE') || desc.contains(':COMPLETED'))) { /* ok */ }
         else continue;
-        final day = ts.substring(0, 10);
-        final idx = dateStrs.indexOf(day);
-        if (idx >= 0) counts[idx]++;
+        if (ts.length >= 10) {
+          final day = ts.substring(0, 10);
+          final idx = dateStrs.indexOf(day);
+          if (idx >= 0) counts[idx]++;
+        }
       }
       final data = <Map<String, dynamic>>[];
       for (int i = 0; i < 7; i++) {
@@ -101,7 +108,7 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    "Total: ${_data.fold<int>(0, (sum, item) => sum + ((item['count'] ?? 0) as int))}",
+                    "Total: ${_data.fold<int>(0, (sum, item) => sum + SafeParser.parseInt(item['count']))}",
                     style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -110,9 +117,9 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
           const SizedBox(height: 32),
           SizedBox(
             height: 200,
-            child: _isLoading 
+            child: _isLoading
               ? const Center(child: CircularProgressIndicator())
-              : _data.isEmpty 
+              : _data.isEmpty
                 ? const Center(child: Text("Aucune donnée disponible", style: TextStyle(color: Colors.white38)))
                 : LineChart(
                     LineChartData(
@@ -136,10 +143,10 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
                             reservedSize: 30,
                             interval: 1,
                             getTitlesWidget: (value, meta) {
-                              if (value >= 0 && value < _data.length) {
-                                final day = _data[value.toInt()]['day']?.toString() ?? '';
+                              final idx = value.toInt();
+                              if (idx >= 0 && idx < _data.length) {
                                 return Text(
-                                  day,
+                                  _data[idx]['day']?.toString() ?? '',
                                   style: const TextStyle(color: Colors.white38, fontSize: 10),
                                 );
                               }
@@ -192,8 +199,8 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
     if (_data.isEmpty) return 10;
     int max = 0;
     for (var item in _data) {
-      final count = item['count'];
-      if (count != null && count > max) max = count;
+      final count = SafeParser.parseInt(item['count']);
+      if (count > max) max = count;
     }
     return (max + 2).toDouble();
   }
@@ -201,8 +208,8 @@ class _ProjectActivityChartState extends State<ProjectActivityChart> {
   List<FlSpot> _getSpots() {
     List<FlSpot> spots = [];
     for (int i = 0; i < _data.length; i++) {
-      final count = _data[i]['count'] ?? 0;
-      spots.add(FlSpot(i.toDouble(), (count as int).toDouble()));
+      final count = SafeParser.parseInt(_data[i]['count']);
+      spots.add(FlSpot(i.toDouble(), count.toDouble()));
     }
     return spots;
   }

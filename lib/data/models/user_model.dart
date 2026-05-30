@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../../utils/safe_parser.dart';
 
 class UserModel {
   final String id;
@@ -42,18 +42,18 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     return UserModel(
-      id: json['id'].toString(),
+      id: json['id']?.toString() ?? '',
       email: json['email'] ?? '',
       firstName: json['first_name'] ?? '',
       lastName: json['last_name'] ?? '',
-      phoneNumber: json['phone_number'] as String?,
+      phoneNumber: json['phone_number']?.toString(),
       companyId: json['company']?.toString(),
       role: json['role'] ?? 'MEMBER',
       isCompanyAdmin: json['is_company_admin'] == true,
-      bio: json['bio'] as String?,
+      bio: json['bio']?.toString(),
       preferences: json['preferences'] is String
-          ? Map<String, dynamic>.from(jsonDecode(json['preferences'] as String))
-          : json['preferences'] as Map<String, dynamic>?,
+          ? SafeParser.parseJsonMap(json['preferences'])
+          : json['preferences'] is Map ? json['preferences'] as Map<String, dynamic>? : null,
     );
   }
 

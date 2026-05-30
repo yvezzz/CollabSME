@@ -23,14 +23,14 @@ class AIPredictionModel {
 
   factory AIPredictionModel.fromJson(Map<String, dynamic> json) {
     return AIPredictionModel(
-      id: json['id'],
-      taskId: json['task'],
-      riskPercentage: json['risk_percentage']?.toDouble() ?? 0.0,
-      predictedDelayDays: json['predicted_delay_days'],
-      confidence: json['confidence']?.toDouble() ?? 0.0,
-      reasons: json['reasons'] ?? {},
-      recommendations: json['recommendations'] ?? {},
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      taskId: json['task'] is int ? json['task'] as int : int.tryParse(json['task']?.toString() ?? '0') ?? 0,
+      riskPercentage: (json['risk_percentage'] is num ? (json['risk_percentage'] as num).toDouble() : double.tryParse(json['risk_percentage']?.toString() ?? '0') ?? 0.0),
+      predictedDelayDays: json['predicted_delay_days'] is int ? json['predicted_delay_days'] as int : int.tryParse(json['predicted_delay_days']?.toString() ?? ''),
+      confidence: (json['confidence'] is num ? (json['confidence'] as num).toDouble() : double.tryParse(json['confidence']?.toString() ?? '0') ?? 0.0),
+      reasons: json['reasons'] is Map ? json['reasons'] as Map<String, dynamic> : {},
+      recommendations: json['recommendations'] is Map ? json['recommendations'] as Map<String, dynamic> : {},
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
       isResolved: json['is_resolved'] ?? false,
     );
   }
@@ -71,13 +71,13 @@ class AIGenerationLogModel {
 
   factory AIGenerationLogModel.fromJson(Map<String, dynamic> json) {
     return AIGenerationLogModel(
-      id: json['id'],
-      userId: json['user'],
-      taskId: json['task'],
-      prompt: json['prompt'],
-      response: json['response'],
-      modelUsed: json['model_used'],
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: json['user'] is int ? json['user'] as int : int.tryParse(json['user']?.toString() ?? '0') ?? 0,
+      taskId: json['task'] is int ? json['task'] as int : int.tryParse(json['task']?.toString() ?? ''),
+      prompt: json['prompt']?.toString() ?? '',
+      response: json['response']?.toString() ?? '',
+      modelUsed: json['model_used']?.toString() ?? '',
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
   }
 
@@ -117,14 +117,14 @@ class AISentimentAnalysisModel {
 
   factory AISentimentAnalysisModel.fromJson(Map<String, dynamic> json) {
     return AISentimentAnalysisModel(
-      id: json['id'],
-      userId: json['user'],
-      projectId: json['project'],
-      sentimentScore: json['sentiment_score']?.toDouble() ?? 0.0,
-      fatigueScore: json['fatigue_score']?.toDouble() ?? 0.0,
-      analysisPeriodStart: DateTime.parse(json['analysis_period_start']),
-      analysisPeriodEnd: DateTime.parse(json['analysis_period_end']),
-      keyInsights: json['key_insights'] ?? {},
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      userId: json['user'] is int ? json['user'] as int : int.tryParse(json['user']?.toString() ?? '0') ?? 0,
+      projectId: json['project'] is int ? json['project'] as int : int.tryParse(json['project']?.toString() ?? '0') ?? 0,
+      sentimentScore: (json['sentiment_score'] is num ? (json['sentiment_score'] as num).toDouble() : double.tryParse(json['sentiment_score']?.toString() ?? '0') ?? 0.0),
+      fatigueScore: (json['fatigue_score'] is num ? (json['fatigue_score'] as num).toDouble() : double.tryParse(json['fatigue_score']?.toString() ?? '0') ?? 0.0),
+      analysisPeriodStart: json['analysis_period_start'] != null ? DateTime.parse(json['analysis_period_start']) : DateTime.now(),
+      analysisPeriodEnd: json['analysis_period_end'] != null ? DateTime.parse(json['analysis_period_end']) : DateTime.now(),
+      keyInsights: json['key_insights'] is Map ? json['key_insights'] as Map<String, dynamic> : {},
     );
   }
 
@@ -165,13 +165,13 @@ class AIBlockageDetectionModel {
 
   factory AIBlockageDetectionModel.fromJson(Map<String, dynamic> json) {
     return AIBlockageDetectionModel(
-      id: json['id'],
-      taskId: json['task'],
-      detectionType: json['detection_type'],
-      triggerCommentId: json['trigger_comment'],
-      confidence: json['confidence']?.toDouble() ?? 0.0,
-      suggestedActions: json['suggested_actions'] ?? {},
-      detectedAt: DateTime.parse(json['detected_at']),
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? '0') ?? 0,
+      taskId: json['task'] is int ? json['task'] as int : int.tryParse(json['task']?.toString() ?? '0') ?? 0,
+      detectionType: json['detection_type']?.toString() ?? '',
+      triggerCommentId: json['trigger_comment'] is int ? json['trigger_comment'] as int : int.tryParse(json['trigger_comment']?.toString() ?? ''),
+      confidence: (json['confidence'] is num ? (json['confidence'] as num).toDouble() : double.tryParse(json['confidence']?.toString() ?? '0') ?? 0.0),
+      suggestedActions: json['suggested_actions'] is Map ? json['suggested_actions'] as Map<String, dynamic> : {},
+      detectedAt: json['detected_at'] != null ? DateTime.parse(json['detected_at']) : DateTime.now(),
       resolvedAt: json['resolved_at'] != null ? DateTime.parse(json['resolved_at']) : null,
     );
   }

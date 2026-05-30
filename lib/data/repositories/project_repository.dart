@@ -1,24 +1,23 @@
-import 'dart:convert';
 import '../models/project_model.dart';
 import '../models/dashboard_stats.dart';
 import '../../core/network/api_client.dart';
+import '../../utils/safe_parser.dart';
 
 class ProjectRepository {
-  /// Récupérer les statistiques globales pour le tableau de bord
   Future<DashboardStats> getDashboardStats() async {
     final response = await ApiClient.get('projects/dashboard/stats/');
     if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
+      final json = SafeParser.safeDecodeMap(response.body);
+      if (json == null) return DashboardStats.empty();
       return DashboardStats(
-        totalProjects: json['total_projects'],
-        activeTasks: json['active_tasks'],
-        teamMembers: json['total_members'],
+        totalProjects: SafeParser.parseInt(json['total_projects']),
+        activeTasks: SafeParser.parseInt(json['active_tasks']),
+        teamMembers: SafeParser.parseInt(json['total_members']),
       );
     }
     return DashboardStats.empty();
   }
 
-  /// Récupérer la liste des projets de l'entreprise
   Future<Map<String, dynamic>> getProjects({int page = 1, String search = ''}) async {
     try {
       final params = <String, String>{'page': '$page'};
@@ -27,28 +26,27 @@ class ProjectRepository {
       final response = await ApiClient.get('projects/?$query');
 
       if (response.statusCode == 200) {
-        final dynamic decoded = jsonDecode(response.body);
+        final decoded = SafeParser.safeJsonDecode(response.body);
         final List results = decoded is Map ? (decoded['results'] is List ? decoded['results'] : []) : (decoded is List ? decoded : []);
-        final int total = decoded is Map ? (decoded['count'] ?? results.length) : results.length;
+        final int total = decoded is Map ? (SafeParser.parseInt(decoded['count']) != 0 ? SafeParser.parseInt(decoded['count']) : results.length) : results.length;
         return {
-          'projects': results.map((json) => ProjectModel.fromJson(json)).toList(),
+          'projects': results.map((json) => json is Map<String, dynamic> ? ProjectModel.fromJson(json) : ProjectModel.fromJson({})).toList(),
           'count': total,
         };
-      } else {
-        throw Exception(
-          "Erreur lors de la récupération des projets (${response.statusCode})",
-        );
       }
+      throw Exception("Erreur lors de la récupération des projets (${response.statusCode})");
     } catch (e) {
-      throw Exception("Erreur réseau : $e");
+      if (e is Exception && e.toString().contains('Erreur lors')) rethrow;
+      throw Exception("Erreur lors de la récupération des projets : $e");
     }
   }
 
-  /// Créer un nouveau projet
   Future<List<Map<String, dynamic>>> getTemplates() async {
     final response = await ApiClient.get('projects/templates/');
     if (response.statusCode == 200) {
-      return List<Map<String, dynamic>>.from(jsonDecode(response.body));
+      final decoded = SafeParser.safeDecodeList(response.body);
+      if (decoded == null) return [];
+      return decoded.whereType<Map<String, dynamic>>().toList();
     }
     return [];
   }
@@ -59,9 +57,10 @@ class ProjectRepository {
       'title': title,
     });
     if (response.statusCode == 201) {
-      return ProjectModel.fromJson(jsonDecode(response.body));
+      final json = SafeParser.safeDecodeMap(response.body) ?? {};
+      return ProjectModel.fromJson(json);
     }
-    throw Exception("Impossible de créer le projet depuis le template.");
+    throw Exception("Impossible de créer le projet depuis le template (${response.statusCode})");
   }
 
   Future<ProjectModel> createProject({
@@ -91,54 +90,40 @@ class ProjectRepository {
       if (memberIds != null && memberIds.isNotEmpty) data['member_ids'] = memberIds;
 
       final response = await ApiClient.post('projects/', data);
-
       if (response.statusCode == 201) {
-        final body = jsonDecode(response.body);
-        if (body is! Map<String, dynamic>) throw Exception("Réponse inattendue du serveur");
+        final body = SafeParser.safeDecodeMap(response.body);
+        if (body == null) throw Exception("Réponse inattendue du serveur");
         return ProjectModel.fromJson(body);
-      } else {
-        throw Exception("Impossible de créer le projet : ${response.body}");
       }
+      throw Exception("Impossible de créer le projet (${response.statusCode})");
     } catch (e) {
-      throw Exception("Erreur réseau : $e");
+      if (e is Exception) rethrow;
+      throw Exception("Erreur lors de la création du projet : $e");
     }
   }
 
-  /// Récupérer un projet par son ID
   Future<ProjectModel> getProject(String id) async {
     try {
       final response = await ApiClient.get('projects/$id/');
       if (response.statusCode == 200) {
-        return ProjectModel.fromJson(jsonDecode(response.body));
-      } else {
-        throw Exception("Impossible de récupérer le projet");
+        final json = SafeParser.safeDecodeMap(response.body) ?? {};
+        return ProjectModel.fromJson(json);
       }
+      throw Exception("Impossible de récupérer le projet (${response.statusCode})");
     } catch (e) {
-      throw Exception("Erreur réseau : $e");
+      if (e is Exception) rethrow;
+      throw Exception("Erreur lors du chargement du projet : $e");
     }
   }
 
-  /// Supprimer un projet (archivage côté backend)
   Future<void> deleteProject(String id) async {
     final response = await ApiClient.delete('projects/$id/');
-    if (response.statusCode != 204) {
-      throw Exception("Erreur lors de la suppression");
+    if (response.statusCode != 204 && response.statusCode != 200) {
+      throw Exception("Erreur lors de la suppression (${response.statusCode})");
     }
   }
 
-  /// Mettre à jour un projet (PATCH partiel)
-  Future<ProjectModel> updateProject(
-    String id, {
-    String? title,
-    String? description,
-    String? key,
-    String? status,
-    String? priority,
-    double? budget,
-    String? startDate,
-    String? endDate,
-    List<String>? tags,
-  }) async {
+  Future<ProjectModel> updateProject(String id, {String? title, String? description, String? key, String? status, String? priority, double? budget, String? startDate, String? endDate, List<String>? tags}) async {
     try {
       final Map<String, dynamic> data = {};
       if (title != null) data['title'] = title;
@@ -153,19 +138,20 @@ class ProjectRepository {
 
       final response = await ApiClient.patch('projects/$id/', data);
       if (response.statusCode == 200) {
-        return ProjectModel.fromJson(jsonDecode(response.body));
+        final json = SafeParser.safeDecodeMap(response.body) ?? {};
+        return ProjectModel.fromJson(json);
       }
-      throw Exception("Erreur lors de la mise à jour du projet");
+      throw Exception("Erreur lors de la mise à jour du projet (${response.statusCode})");
     } catch (e) {
-      throw Exception("Erreur réseau : $e");
+      if (e is Exception) rethrow;
+      throw Exception("Erreur lors de la mise à jour du projet : $e");
     }
   }
 
-  /// Changer le statut d'un projet (activate / validate / archive)
   Future<void> updateProjectStatus(String id, String action) async {
     final response = await ApiClient.post('projects/$id/$action/', {});
     if (response.statusCode != 200) {
-      throw Exception("Erreur lors du changement de statut");
+      throw Exception("Erreur lors du changement de statut (${response.statusCode})");
     }
   }
 }

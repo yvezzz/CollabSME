@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,14 +8,17 @@ import 'package:http/http.dart' as http;
 import '../../../core/constants/app_constants.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/network/api_client.dart';
+import '../../../utils/safe_parser.dart';
 import '../../widgets/app_toast.dart';
 
 final reportProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final response = await ApiClient.get('projects/reports/');
   if (response.statusCode == 200) {
-    return jsonDecode(response.body);
+    final json = SafeParser.safeDecodeMap(response.body);
+    if (json != null) return json;
+    throw Exception("Format de réponse invalide");
   }
-  throw Exception("Erreur de chargement du rapport");
+  throw Exception("Erreur de chargement du rapport (${response.statusCode})");
 });
 
 class ReportsScreen extends ConsumerWidget {
@@ -176,14 +178,10 @@ class ReportsScreen extends ConsumerWidget {
       return const Text("Aucune donnée disponible", style: TextStyle(color: AppColors.textSecondary));
     }
 
-    final colors = [AppColors.primary, AppColors.accent, AppColors.warning, AppColors.danger, AppColors.textSecondary];
-    int i = 0;
     final sections = statusData.entries.map((e) {
-      final c = colors[i % colors.length];
-      i++;
       return PieChartSectionData(
-        value: (e.value as num).toDouble(),
-        color: c,
+        value: SafeParser.parseDouble(e.value),
+        color: AppColors.statusColor(e.key),
         title: '${e.key}\n${e.value}',
         titleStyle: const TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold),
         radius: 40,
@@ -205,7 +203,7 @@ class ReportsScreen extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: statusData.entries.map((e) {
-                  final c = colors[statusData.entries.toList().indexOf(e) % colors.length];
+                  final c = AppColors.statusColor(e.key);
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(
@@ -213,7 +211,7 @@ class ReportsScreen extends ConsumerWidget {
                       children: [
                         Container(width: 12, height: 12, decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(3))),
                         const SizedBox(width: 8),
-                        Text("${e.key}: ${e.value}", style: const TextStyle(fontSize: 12)),
+                        Text("${AppColors.statusLabel(e.key)}: ${e.value}", style: const TextStyle(fontSize: 12)),
                       ],
                     ),
                   );

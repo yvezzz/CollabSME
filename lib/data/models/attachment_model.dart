@@ -19,10 +19,10 @@ class AttachmentModel {
     return AttachmentModel(
       id: json['id']?.toString() ?? '',
       fileName: json['original_filename'] ?? 'Fichier',
-      fileUrl: json['file'],
-      fileSize: json['file_size'] ?? 0,
-      uploadedBy: json['uploaded_by_details']?['full_name'] ?? 'Inconnu',
-      uploadedAt: DateTime.parse(json['uploaded_at']),
+      fileUrl: json['file']?.toString() ?? '',
+      fileSize: (json['file_size'] ?? 0) is int ? json['file_size'] as int : int.tryParse(json['file_size']?.toString() ?? '0') ?? 0,
+      uploadedBy: json['uploaded_by_details'] is Map ? (json['uploaded_by_details']?['full_name']?.toString() ?? 'Inconnu') : json['uploaded_by']?.toString() ?? 'Inconnu',
+      uploadedAt: json['uploaded_at'] != null ? DateTime.parse(json['uploaded_at']) : DateTime.now(),
     );
   }
 

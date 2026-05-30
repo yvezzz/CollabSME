@@ -40,25 +40,50 @@ class SafeParser {
     return defaultValue;
   }
 
-  static List<dynamic> parseRawList(dynamic data) {
-    if (data == null) return [];
-    if (data is List) return data;
+  static bool parseBool(dynamic data, {bool defaultValue = false}) {
+    if (data is bool) return data;
+    if (data is int) return data != 0;
     if (data is String) {
-      try {
-        final decoded = jsonDecode(data);
-        if (decoded is List) return decoded;
-      } catch (_) {}
+      if (data == 'true' || data == '1') return true;
+      if (data == 'false' || data == '0') return false;
     }
-    return [];
+    return defaultValue;
+  }
+
+  static DateTime? parseDateTime(dynamic data) {
+    if (data == null) return null;
+    if (data is DateTime) return data;
+    if (data is String) return DateTime.tryParse(data);
+    return null;
+  }
+
+  static dynamic safeJsonDecode(String body) {
+    try {
+      return jsonDecode(body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? safeDecodeMap(String body) {
+    final result = safeJsonDecode(body);
+    if (result is Map<String, dynamic>) return result;
+    return null;
+  }
+
+  static List<dynamic>? safeDecodeList(String body) {
+    final result = safeJsonDecode(body);
+    if (result is List<dynamic>) return result;
+    return null;
   }
 
   static List<String> parseJsonList(dynamic data) {
     if (data == null) return [];
-    if (data is List) return data.cast<String>();
+    if (data is List) return data.whereType<String>().toList();
     if (data is String) {
       try {
         final decoded = jsonDecode(data);
-        if (decoded is List) return decoded.cast<String>();
+        if (decoded is List) return decoded.whereType<String>().toList();
       } catch (_) {}
     }
     return [];
@@ -74,5 +99,17 @@ class SafeParser {
       } catch (_) {}
     }
     return {};
+  }
+
+  static List<dynamic> parseRawList(dynamic data) {
+    if (data == null) return [];
+    if (data is List) return data;
+    if (data is String) {
+      try {
+        final decoded = jsonDecode(data);
+        if (decoded is List) return decoded;
+      } catch (_) {}
+    }
+    return [];
   }
 }

@@ -1,3 +1,5 @@
+import '../../utils/safe_parser.dart';
+
 class NotificationModel {
   final String id;
   final String title;
@@ -25,7 +27,7 @@ class NotificationModel {
       type: json['notification_type'] ?? 'OTHER',
       isRead: json['is_read'] ?? false,
       relatedId: json['related_id']?.toString(),
-      createdAt: DateTime.parse(json['created_at']),
+      createdAt: SafeParser.parseDateTime(json['created_at']) ?? DateTime.now(),
     );
   }
 

@@ -13,12 +13,58 @@ class AppColors {
   static const Color danger = Color(0xFFEF4444);
   static const Color warning = Color(0xFFF59E0B);
 
-  // Dégradé utilisé pour les logos et les éléments d'importance
+    // Dégradé utilisé pour les logos et les éléments d'importance
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFF6366F1), Color(0xFFA855F7)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static Color statusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'TODO':
+        return Color(0xFF64748B);
+      case 'ACTIVE':
+        return Color(0xFF22C55E);
+      case 'IN_PROGRESS':
+        return Color(0xFF06B6D4);
+      case 'DRAFT':
+      case 'PLANNING':
+        return Color(0xFF9CA3AF);
+      case 'COMPLETED':
+      case 'DONE':
+        return Color(0xFF3B82F6);
+      case 'REVIEW':
+        return Color(0xFFF97316);
+      case 'ARCHIVED':
+        return Color(0xFFEF4444);
+      default:
+        return Color(0xFF9CA3AF);
+    }
+  }
+
+  static String statusLabel(String status) {
+    switch (status.toUpperCase()) {
+      case 'TODO':
+        return "À faire";
+      case 'ACTIVE':
+        return "Actif";
+      case 'IN_PROGRESS':
+        return "En cours";
+      case 'DRAFT':
+      case 'PLANNING':
+        return "Brouillon";
+      case 'COMPLETED':
+      case 'DONE':
+        return "Terminé";
+      case 'REVIEW':
+        return "En révision";
+      case 'ARCHIVED':
+        return "Archivé";
+      default:
+        return status;
+    }
+  }
 }
 
 

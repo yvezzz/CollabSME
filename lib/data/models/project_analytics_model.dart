@@ -16,7 +16,7 @@ class ProjectAnalyticsModel {
   factory ProjectAnalyticsModel.fromJson(Map<String, dynamic> json) {
     var statusMap = <String, int>{};
     if (json['tasks_by_status'] != null) {
-      (json['tasks_by_status'] as Map).forEach((k, v) {
+      (json['tasks_by_status'] as Map<dynamic, dynamic>).forEach((k, v) {
         statusMap[k.toString()] = v as int;
       });
     }
@@ -31,7 +31,7 @@ class ProjectAnalyticsModel {
 
     return ProjectAnalyticsModel(
       totalTasks: json['total_tasks'] ?? 0,
-      completionRate: (json['completion_rate'] ?? 0).toDouble(),
+      completionRate: (json['completion_rate'] ?? 0) is num ? (json['completion_rate'] as num).toDouble() : double.tryParse(json['completion_rate']?.toString() ?? '0') ?? 0.0,
       tasksByStatus: statusMap,
       tasksPerMember: memberTasks,
       overdueTasks: json['overdue_tasks'] ?? 0,

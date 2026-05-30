@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'dart:convert';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/route_helper.dart';
+import '../../../utils/safe_parser.dart';
 
 class GlobalSearchDelegate extends SearchDelegate {
   final WidgetRef ref;
@@ -102,8 +102,10 @@ class GlobalSearchDelegate extends SearchDelegate {
   Future<Map<String, dynamic>> _search(String q) async {
     final response = await ApiClient.get('projects/search/?q=${Uri.encodeComponent(q)}');
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final json = SafeParser.safeDecodeMap(response.body);
+      if (json != null) return json;
+      throw Exception("Format de réponse invalide");
     }
-    throw Exception("Erreur de recherche");
+    throw Exception("Erreur de recherche (${response.statusCode})");
   }
 }
