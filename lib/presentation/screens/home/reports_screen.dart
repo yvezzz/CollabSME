@@ -1,4 +1,4 @@
-import 'dart:html' as html;
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +9,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/network/api_client.dart';
 import '../../../utils/safe_parser.dart';
+import '../../../utils/download_helper.dart';
 import '../../widgets/app_toast.dart';
 
 final reportProvider = FutureProvider<Map<String, dynamic>>((ref) async {
@@ -250,12 +251,7 @@ class ReportsScreen extends ConsumerWidget {
         }
         return;
       }
-      final blob = html.Blob([response.bodyBytes], 'text/csv');
-      final blobUrl = html.Url.createObjectUrlFromBlob(blob);
-      html.AnchorElement(href: blobUrl)
-        ..setAttribute('download', 'rapport_taches.csv')
-        ..click();
-      html.Url.revokeObjectUrl(blobUrl);
+      await downloadCsv(response.bodyBytes, 'rapport_taches.csv');
       if (context.mounted) {
         AppToast.show(context, message: "CSV téléchargé", type: ToastType.success);
       }
