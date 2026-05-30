@@ -77,10 +77,10 @@ class AppConstants {
   /// iOS émulé : http://127.0.0.1:8000/api/
   static const String apiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://unconvoluted-prepreference-jeraldine.ngrok-free.dev/api/',
+    defaultValue: 'https://collabsme-production.up.railway.app/api/',
   );
   static const String wsBaseUrl = String.fromEnvironment(
     'WS_BASE_URL',
-    defaultValue: 'wss://unconvoluted-prepreference-jeraldine.ngrok-free.dev/',
+    defaultValue: 'wss://collabsme-production.up.railway.app/',
   );
 }
