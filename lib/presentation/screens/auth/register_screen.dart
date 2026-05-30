@@ -9,6 +9,7 @@ import '../../providers/auth_provider.dart';
 import '../../../widgets/glass_container.dart';
 import '../../../core/constants/app_constants.dart';
 import '../../../core/exceptions/api_exception.dart';
+import '../home/home_screen.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_toast.dart';
 
@@ -84,7 +85,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
       if (success && mounted) {
         AppToast.show(context, message: "Compte créé avec succès !", type: ToastType.success);
-        Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+          (route) => false,
+        );
       }
     } catch (e) {
       if (mounted) {
