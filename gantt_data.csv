@@ -1,0 +1,14 @@
+Task Name,Start Date,End Date,Duration,Dependencies,Progress,Priority
+Analyse des besoins et spécifications,2026-03-10,2026-03-31,21,,100,Haute
+Mise en place architecture Spring Boot/Flutter,2026-03-20,2026-04-10,21,Analyse des besoins et spécifications,100,Haute
+Modèles de données et JPA/Hibernate,2026-04-01,2026-04-15,15,Mise en place architecture Spring Boot/Flutter,100,Haute
+Authentification JWT et gestion des rôles,2026-04-10,2026-04-30,20,Modèles de données et JPA/Hibernate,100,Haute
+CRUD Projets (Backend + Frontend),2026-04-15,2026-05-10,25,"Authentification JWT et gestion des rôles,Modèles de données et JPA/Hibernate",100,Haute
+Dashboard et statistiques projets,2026-05-01,2026-05-20,20,CRUD Projets (Backend + Frontend),100,Haute
+Board Kanban et drag & drop,2026-05-10,2026-05-30,20,CRUD Projets (Backend + Frontend),100,Haute
+Système de commentaires et notifications,2026-05-15,2026-06-05,21,Board Kanban et drag & drop,80,Haute
+Gestion des membres et rôles par projet,2026-05-20,2026-06-10,21,"Système de commentaires et notifications,CRUD Projets (Backend + Frontend)",80,Haute
+Intégration IA (OpenAI/OpenRouter),2026-06-01,2026-06-25,25,Gestion des membres et rôles par projet,0,Haute
+Tests intensifs et correction de bugs,2026-06-15,2026-07-10,25,Intégration IA,0,Haute
+Déploiement Docker et Firebase Hosting,2026-07-01,2026-07-20,20,Tests intensifs et correction de bugs,0,Haute
+Rédaction documentation et guides,2026-07-10,2026-07-30,20,"Tests intensifs et correction de bugs,Déploiement Docker et Firebase Hosting",0,Moyenne

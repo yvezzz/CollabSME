@@ -53,7 +53,7 @@ class AppColors {
         return "En cours";
       case 'DRAFT':
       case 'PLANNING':
-        return "Brouillon";
+        return "Planifié";
       case 'COMPLETED':
       case 'DONE':
         return "Terminé";

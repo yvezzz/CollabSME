@@ -31,7 +31,7 @@ class ProjectAnalyticsModel {
 
     return ProjectAnalyticsModel(
       totalTasks: json['total_tasks'] ?? 0,
-      completionRate: (json['completion_rate'] ?? 0) is num ? (json['completion_rate'] as num).toDouble() : double.tryParse(json['completion_rate']?.toString() ?? '0') ?? 0.0,
+      completionRate: (json['completion_rate'] as num?)?.toDouble() ?? 0.0,
       tasksByStatus: statusMap,
       tasksPerMember: memberTasks,
       overdueTasks: json['overdue_tasks'] ?? 0,

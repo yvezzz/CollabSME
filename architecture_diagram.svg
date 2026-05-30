@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 850" width="1200" height="850">
+    <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0f0c29"/>
+            <stop offset="50%" stop-color="#302b63"/>
+            <stop offset="100%" stop-color="#24243e"/>
+        </linearGradient>
+        <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+            <feDropShadow dx="2" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.4"/>
+        </filter>
+    </defs>
+    <rect width="1200" height="850" fill="url(#bg)" rx="12"/>
+
+    <!-- Title -->
+    <text x="600" y="45" font-family="Arial" font-size="22" font-weight="bold" fill="#ffffff" text-anchor="middle" filter="url(#shadow)">CollabSME — Architecture Globale</text>
+
+    <!-- Client Box -->
+    <rect x="50" y="70" width="240" height="200" rx="10" fill="#1a1a2e" stroke="#4CAF50" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="50" y="70" width="240" height="35" rx="10" fill="#4CAF50"/>
+    <rect x="50" y="90" width="240" height="15" fill="#4CAF50"/>
+    <text x="170" y="93" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">🧑‍💻 Client</text>
+    <text x="170" y="125" font-family="Arial" font-size="12" fill="#e0e0e0" text-anchor="middle">Flutter Web 3.29+</text>
+    <text x="170" y="147" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Firebase Hosting</text>
+    <text x="170" y="167" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">State: Riverpod</text>
+    <text x="170" y="187" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">UI: Glassmorphism sombre</text>
+    <text x="170" y="207" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Charts: fl_chart</text>
+    <text x="170" y="227" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Calendrier: table_calendar</text>
+    <text x="170" y="255" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Renderer: CanvasKit</text>
+
+    <!-- API REST Box -->
+    <rect x="350" y="70" width="240" height="160" rx="10" fill="#1a1a2e" stroke="#FF9800" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="350" y="70" width="240" height="35" rx="10" fill="#FF9800"/>
+    <rect x="350" y="90" width="240" height="15" fill="#FF9800"/>
+    <text x="470" y="93" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">🔌 API REST (JSON)</text>
+    <text x="470" y="125" font-family="Arial" font-size="12" fill="#e0e0e0" text-anchor="middle">JWT Bearer Token</text>
+    <text x="470" y="147" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">jjwt 0.12.6</text>
+    <text x="470" y="167" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Jackson Snake Case</text>
+    <text x="470" y="187" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Endpoints versionnés</text>
+    <text x="470" y="207" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Stateless Security</text>
+
+    <!-- Backend Box -->
+    <rect x="650" y="70" width="500" height="360" rx="10" fill="#1a1a2e" stroke="#2196F3" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="650" y="70" width="500" height="35" rx="10" fill="#2196F3"/>
+    <rect x="650" y="90" width="500" height="15" fill="#2196F3"/>
+    <text x="900" y="93" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">⚙️ Backend Spring Boot 3.4.4 (Java 21)</text>
+
+    <!-- Controllers sub-box -->
+    <rect x="670" y="120" width="220" height="150" rx="8" fill="#16213e" stroke="#64B5F6" stroke-width="1"/>
+    <text x="780" y="140" font-family="Arial" font-size="12" font-weight="bold" fill="#64B5F6" text-anchor="middle">Controllers</text>
+    <text x="780" y="158" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">AuthController</text>
+    <text x="780" y="175" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">ProjectController</text>
+    <text x="780" y="192" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">TaskController</text>
+    <text x="780" y="209" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">ActivityLogController</text>
+    <text x="780" y="226" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">NotificationController</text>
+    <text x="780" y="243" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">InvitationController</text>
+    <text x="780" y="260" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">AIController</text>
+
+    <!-- Services sub-box -->
+    <rect x="910" y="120" width="220" height="150" rx="8" fill="#16213e" stroke="#64B5F6" stroke-width="1"/>
+    <text x="1020" y="140" font-family="Arial" font-size="12" font-weight="bold" fill="#64B5F6" text-anchor="middle">Services</text>
+    <text x="1020" y="158" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">AuthService</text>
+    <text x="1020" y="175" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">ProjectService</text>
+    <text x="1020" y="192" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">TaskService</text>
+    <text x="1020" y="209" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">NotificationService</text>
+    <text x="1020" y="226" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">CompanyService</text>
+    <text x="1020" y="243" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">AIService</text>
+
+    <!-- Models JPA sub-box -->
+    <rect x="670" y="285" width="460" height="130" rx="8" fill="#16213e" stroke="#4DD0E1" stroke-width="1"/>
+    <text x="900" y="305" font-family="Arial" font-size="12" font-weight="bold" fill="#4DD0E1" text-anchor="middle">Modèles JPA (15 tables)</text>
+    <text x="720" y="325" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">User / Company</text>
+    <text x="900" y="325" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">Project / Task / Comment</text>
+    <text x="1080" y="325" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">ChecklistItem / Attachment</text>
+    <text x="720" y="345" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">ActivityLog / Notification</text>
+    <text x="900" y="345" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">Invitation / AIChat</text>
+    <text x="1080" y="345" font-family="Arial" font-size="11" fill="#e0e0e0" text-anchor="middle">PasswordResetToken</text>
+
+    <!-- DB Box -->
+    <rect x="50" y="310" width="240" height="180" rx="10" fill="#1a1a2e" stroke="#9C27B0" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="50" y="310" width="240" height="35" rx="10" fill="#9C27B0"/>
+    <rect x="50" y="330" width="240" height="15" fill="#9C27B0"/>
+    <text x="170" y="333" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">🗄️ Base de Données</text>
+    <text x="170" y="365" font-family="Arial" font-size="12" fill="#e0e0e0" text-anchor="middle">MySQL via XAMPP</text>
+    <text x="170" y="387" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">15 tables</text>
+    <text x="170" y="407" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">ORM : JPA / Hibernate</text>
+    <text x="170" y="427" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Database : collabsme</text>
+    <text x="170" y="447" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">DDL auto : update</text>
+    <text x="170" y="467" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Seed data : 4 users / 7 projets / 20 tâches</text>
+
+    <!-- External Services Box -->
+    <rect x="50" y="530" width="240" height="160" rx="10" fill="#1a1a2e" stroke="#F44336" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="50" y="530" width="240" height="35" rx="10" fill="#F44336"/>
+    <rect x="50" y="550" width="240" height="15" fill="#F44336"/>
+    <text x="170" y="553" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">📡 Services Externes</text>
+    <text x="170" y="585" font-family="Arial" font-size="12" fill="#e0e0e0" text-anchor="middle">Brevo REST API (Emails)</text>
+    <text x="170" y="607" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">OpenRouter / OpenAI (IA)</text>
+    <text x="170" y="627" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Firebase Hosting</text>
+    <text x="170" y="647" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">ngrok (tunnel dev)</text>
+    <text x="170" y="667" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">WebSocket temps réel</text>
+
+    <!-- Security Box -->
+    <rect x="350" y="530" width="240" height="160" rx="10" fill="#1a1a2e" stroke="#FF5722" stroke-width="2" filter="url(#shadow)"/>
+    <rect x="350" y="530" width="240" height="35" rx="10" fill="#FF5722"/>
+    <rect x="350" y="550" width="240" height="15" fill="#FF5722"/>
+    <text x="470" y="553" font-family="Arial" font-size="14" font-weight="bold" fill="#fff" text-anchor="middle">🔐 Sécurité</text>
+    <text x="470" y="585" font-family="Arial" font-size="12" fill="#e0e0e0" text-anchor="middle">JWT stateless</text>
+    <text x="470" y="607" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">BCrypt (mots de passe)</text>
+    <text x="470" y="627" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Spring Security Filter Chain</text>
+    <text x="470" y="647" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">Rôles : ADMIN / LEAD / MEMBER</text>
+    <text x="470" y="667" font-family="Arial" font-size="11" fill="#a0a0b0" text-anchor="middle">CORS configuré</text>
+
+    <!-- Arrows between layers -->
+    <!-- Client -> API -->
+    <line x1="290" y1="170" x2="345" y2="170" stroke="#FF9800" stroke-width="2" stroke-dasharray="6,3" marker-end="url(#arrow-orange)"/>
+    <!-- API -> Backend -->
+    <line x1="590" y1="170" x2="645" y2="170" stroke="#2196F3" stroke-width="2" stroke-dasharray="6,3"/>
+    <!-- Backend -> DB -->
+    <line x1="650" y1="390" x2="295" y2="390" stroke="#9C27B0" stroke-width="2"/>
+    <line x1="295" y1="390" x2="295" y2="400" stroke="#9C27B0" stroke-width="2"/>
+    <line x1="295" y1="400" x2="650" y2="400" stroke="#9C27B0" stroke-width="2"/>
+    <!-- Backend -> External -->
+    <line x1="650" y1="440" x2="295" y2="600" stroke="#F44336" stroke-width="1.5" stroke-dasharray="5,3"/>
+
+    <!-- Arrow marker definitions -->
+    <defs>
+        <marker id="arrow-orange" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#FF9800"/>
+        </marker>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#2196F3"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="#9C27B0"/>
+        </marker>
+    </defs>
+</svg>

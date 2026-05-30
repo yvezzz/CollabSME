@@ -1,0 +1,91 @@
+{
+  "name": "CollabSME - Architecture Globale",
+  "children": [
+    {
+      "name": "🧑‍💻 Client (Frontend)",
+      "children": [
+        {"name": "Flutter Web 3.29+ (CanvasKit)"},
+        {"name": "Firebase Hosting (collabsme-7e261.web.app)"},
+        {"name": "State Management : Riverpod"},
+        {"name": "Charts : fl_chart"},
+        {"name": "Calendrier : table_calendar"},
+        {"name": "Thème : Glassmorphism sombre"}
+      ]
+    },
+    {
+      "name": "🔌 API REST (JSON + JWT)",
+      "children": [
+        {"name": "Bearer Token stateless (jjwt 0.12.6)"},
+        {"name": "Snake_case global (JacksonConfig)"},
+        {"name": "Endpoints versionnés (/api/...)"}
+      ]
+    },
+    {
+      "name": "⚙️ Backend (Spring Boot 3.4.4)",
+      "children": [
+        {
+          "name": "Controllers",
+          "children": [
+            {"name": "AuthController (login, register, reset pwd)"},
+            {"name": "ProjectController (CRUD, stats, reports)"},
+            {"name": "TaskController (Kanban, reorder, activity)"},
+            {"name": "ActivityLogController"},
+            {"name": "NotificationController"},
+            {"name": "InvitationController"},
+            {"name": "AIController (chat, génération tâche)"}
+          ]
+        },
+        {
+          "name": "Services",
+          "children": [
+            {"name": "AuthService (JWT, BCrypt)"},
+            {"name": "ProjectService (dashboard, reports)"},
+            {"name": "TaskService (log activité, checklists)"},
+            {"name": "NotificationService (WebSocket temps réel)"},
+            {"name": "CompanyService"},
+            {"name": "AIService (OpenRouter REST)"}
+          ]
+        },
+        {
+          "name": "Modèles JPA",
+          "children": [
+            {"name": "User, Company"},
+            {"name": "Project, Task, Comment"},
+            {"name": "ChecklistItem, Attachment"},
+            {"name": "ActivityLog, Notification"},
+            {"name": "Invitation, AIChat"},
+            {"name": "PasswordResetToken"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🗄️ Base de données",
+      "children": [
+        {"name": "MySQL (XAMPP) - 15 tables"},
+        {"name": "Base : collabsme"},
+        {"name": "ORM : JPA/Hibernate"},
+        {"name": "Migrations : spring.jpa.hibernate.ddl-auto=update"}
+      ]
+    },
+    {
+      "name": "📡 Services Externes",
+      "children": [
+        {"name": "Brevo API (emails transactionnels)"},
+        {"name": "OpenRouter / OpenAI (IA)"},
+        {"name": "Firebase Hosting (hébergement frontend)"},
+        {"name": "ngrok (tunnel dev API)"}
+      ]
+    },
+    {
+      "name": "🔐 Sécurité",
+      "children": [
+        {"name": "JWT stateless (Access + Refresh token)"},
+        {"name": "BCrypt (mots de passe)"},
+        {"name": "Rôles : ADMIN, LEAD, MEMBER"},
+        {"name": "Spring Security (SecurityFilterChain)"},
+        {"name": "CORS configuré pour Firebase + ngrok"}
+      ]
+    }
+  ]
+}

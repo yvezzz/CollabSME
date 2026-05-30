@@ -1,0 +1,267 @@
+{
+  "timestamp": "2026-05-28T14:30:09.977Z",
+  "summary": {
+    "total": 51,
+    "passed": 48,
+    "failed": 3,
+    "pct": 94
+  },
+  "results": [
+    {
+      "name": "POST /api/auth/register/ (création)",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/register/ (snake_case)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/login/ (200 + tokens)",
+      "passed": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiZW1haWwiOiJkZW1vQGNvbGxhYnNtZS5jb20iLCJpYXQiOjE3Nzk5Nzg1ODIsImV4cCI6MTc3OTk4MjE4Mn0.g_AQZKcFjGaKHUXnQm6TjK5J5Usm9ZNKKyWbWCN2FHaa69E3SSAHh3KeBXCMlS37qs0ssV5q0DAcfAA0tN6GMg",
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/token/refresh/",
+      "passed": "eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiIyIiwiZW1haWwiOiJkZW1vQGNvbGxhYnNtZS5jb20iLCJpYXQiOjE3Nzk5Nzg1ODIsImV4cCI6MTc3OTk4MjE4Mn0.g_AQZKcFjGaKHUXnQm6TjK5J5Usm9ZNKKyWbWCN2FHaa69E3SSAHh3KeBXCMlS37qs0ssV5q0DAcfAA0tN6GMg",
+      "detail": ""
+    },
+    {
+      "name": "GET /api/auth/me/ (profil)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "PATCH /api/auth/me/ (modification)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/password-reset/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/password-change/ (valid request)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/password-change/ (mauvais current)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/logout/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/auth/login/ (admin)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/invitations/ (création par admin)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/invitations/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/invitations/validate/{token}/",
+      "passed": "newuser-1779978586837@test.com",
+      "detail": ""
+    },
+    {
+      "name": "GET /api/companies/detail/",
+      "passed": "Ma Société",
+      "detail": ""
+    },
+    {
+      "name": "PATCH /api/companies/detail/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/companies/members/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/projects/ (création)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/20/",
+      "passed": "Projet Test QA",
+      "detail": ""
+    },
+    {
+      "name": "PATCH /api/projects/20/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/dashboard/stats/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/calendar/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/reports/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/reports/export/csv/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/20/stats/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/activity/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/search/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/20/members/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/projects/20/members/ (ajout)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/20/tasks/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/projects/20/tasks/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/20/tasks/18/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "PATCH tasks/18/status/ (→ IN_PROGRESS)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "PATCH tasks/18/status/ (→ DONE)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "PATCH tasks/18/status/ (→ TODO)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/tasks/my-tasks/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/tasks/activity/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST subtasks/ (création)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "PATCH subtasks/8/ (complétion)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST comments/ (création)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/ai/generate-task/",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "POST /api/ai/chat/",
+      "passed": false,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/ai/chat/ (historique)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/notifications/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/notifications/unread_count/",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/activity/ (liste + pagination)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/activity/?project_id= (filtre projet)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/activity/?action_type= (filtre type)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/projects/ sans token (401/403)",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "GET /api/auth/me/ token invalide (401/403)",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "fixes": []
+}
