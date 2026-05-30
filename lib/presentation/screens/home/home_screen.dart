@@ -82,26 +82,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final pages = visibleIndices.map((i) => allPages[i]).toList();
     final visualIndex = visibleIndices.indexOf(_selectedIndex);
 
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        final shouldExit = await showDialog<bool>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.surface,
-            title: const Text("Quitter l'application ?"),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Annuler")),
-              ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Quitter")),
-            ],
-          ),
-        );
-        if (shouldExit == true && context.mounted) {
-          Navigator.of(context).pop();
-        }
-      },
-      child: Scaffold(
+    return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAIAssistant(),
         label: const Text("Assistant IA"),
@@ -113,7 +94,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           if (isDesktop || isTablet) _buildSidebar(context, user),
 
           // Contenu dynamique basé sur l'index
-          Expanded(child: pages[visualIndex >= 0 ? visualIndex : 0]),
+          Expanded(child: IndexedStack(index: visualIndex >= 0 ? visualIndex : 0, children: pages)),
         ],
       ),
       bottomNavigationBar: (!isDesktop && !isTablet)
@@ -140,7 +121,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               }).toList(),
             )
           : null,
-      ),
     );
   }
 

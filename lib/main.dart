@@ -68,16 +68,16 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
   void _navigateDeepLink(Uri uri, {bool replace = false}) {
     final route = _buildDeepLinkRoute(uri);
     if (route != null) {
-      _pushWithRetry(route, retries: 20, replace: replace);
+      _pushWithRetry(route, retries: 5, replace: replace);
       return;
     }
     // Fallback to named route via onGenerateRoute
     final path = uri.path;
     debugPrint('DeepLink: fallback to pushNamed $path');
-    _pushNamedWithRetry(path, retries: 20, replace: replace);
+    _pushNamedWithRetry(path, retries: 5, replace: replace);
   }
 
-  void _pushNamedWithRetry(String path, {int retries = 20, bool replace = false}) {
+  void _pushNamedWithRetry(String path, {int retries = 5, bool replace = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = _navigatorKey.currentState;
       if (nav != null) {
@@ -98,7 +98,7 @@ class _CollabSMEAppState extends ConsumerState<CollabSMEApp> {
     });
   }
 
-  void _pushWithRetry(Route<dynamic> route, {int retries = 20, bool replace = false}) {
+  void _pushWithRetry(Route<dynamic> route, {int retries = 5, bool replace = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final nav = _navigatorKey.currentState;
       if (nav != null) {
